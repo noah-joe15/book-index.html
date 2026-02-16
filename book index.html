@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INGU STORE Book Analytics</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* TIMES NEW ROMAN MODERN AESTHETIC */
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #f0f2f5;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        input, select, button {
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        /* Responsive & Smooth Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <div id="root" class="w-full h-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS ---
+        const Icons = {
+            Dashboard: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+            Sale: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Analytics: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>,
+            Debt: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+            Expense: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
+            Config: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>,
+            Financial: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+            License: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
+            Download: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+            Trash: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        };
+
+        const CategoryIcons = {
+            cat_textbook: () => <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
+            cat_religious: () => <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+            cat_novel: () => <svg className="w-5 h-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>,
+            cat_stationery: () => <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
+            cat_soap: () => <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>,
+            cat_flour: () => <svg className="w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+        };
+
+        const LICENSE_TYPES = [
+            { id: 'brela', name: 'BRELA (Annual Return)', interval: 12, label: 'Annual' },
+            { id: 'tra_clearance', name: 'TRA (Tax Clearance)', interval: 12, label: 'Annual' },
+            { id: 'tra_quarterly', name: 'TRA (Quarterly Tax)', interval: 3, label: 'Quarterly' },
+            { id: 'business_license', name: 'Municipal Business License', interval: 12, label: 'Annual' },
+            { id: 'mpesa', name: 'M-Pesa Agent License', interval: 12, label: 'Annual' },
+            { id: 'fire', name: 'Fire & Rescue Force', interval: 12, label: 'Annual' },
+            { id: 'osha', name: 'OSHA Compliance', interval: 12, label: 'Annual' },
+        ];
+
+        const TRANSLATIONS = {
+            en: {
+                dashboard: "Dashboard", analytics: "Analytics & Graphs", sales: "New Sale", expenses: "Expenses", config: "Inventory", debts: "Debts", financials: "Financials", licenses: "Licenses & Certs",
+                totalRevenue: "Revenue", netProfit: "Net Profit", totalExpenses: "Expenses", outstandingDebts: "Active Debts",
+                recentSales: "Recent Activity", export: "Export Report", reset: "Reset System", addItem: "Add to Inventory", itemName: "Item Description",
+                category: "Category", buyPrice: "Buying Price", sellPrice: "Selling Price", profit: "Profit", margin: "Margin",
+                save: "Save Item", recordSale: "Process Sale", suggestion: "Suggested Price", lowMargin: "Low Margin",
+                quantity: "Qty", customer: "Customer", markPaid: "Settle Debt", pending: "Credit Sale",
+                cat_textbook: "Textbook", cat_religious: "Religious", cat_novel: "Novel", cat_stationery: "Stationery",
+                cat_soap: "Liquid Soap", cat_flour: "Unga Lishe",
+                capitalTitle: "Capital & Evaluation", capital: "Invested Capital", runningCost: "Running Cost (OpEx)", roi: "Capital Recovery",
+                updateCapital: "Update Capital", totalDue: "TOTAL DUE", balance: "Balance Status",
+                salesTrend: "Sales Trend (Last 7 Days)", categoryDist: "Income by Category",
+                licenseTitle: "Regulatory Compliance", licenseType: "License Type", licenseCost: "Cost (TZS)", paymentDate: "Payment Date", nextDue: "Next Due",
+                addLicense: "Record License Payment", paid: "PAID", overdue: "OVERDUE", dueSoon: "DUE SOON"
+            },
+            sw: {
+                dashboard: "Dashibodi", analytics: "Takwimu na Grafu", sales: "Mauzo", expenses: "Matumizi", config: "Bidhaa", debts: "Madeni", financials: "Mtaji na Tathmini", licenses: "Leseni na Vyeti",
+                totalRevenue: "Mapato", netProfit: "Faida Halisi", totalExpenses: "Matumizi", outstandingDebts: "Madeni",
+                recentSales: "Mauzo Mapya", export: "Pakua Ripoti", reset: "Futa Data Zote", addItem: "Weka Bidhaa", itemName: "Jina la Bidhaa",
+                category: "Kundi", buyPrice: "Bei ya Kununua", sellPrice: "Bei ya Kuuza", profit: "Faida", margin: "Faida %",
+                save: "Hifadhi", recordSale: "Rekodi Mauzo", suggestion: "Pendekezo", lowMargin: "Faida Ndogo",
+                quantity: "Idadi", customer: "Mteja", markPaid: "Lipwa", pending: "Deni",
+                cat_textbook: "Vitabu (Masomo)", cat_religious: "Dini (Biblia)", cat_novel: "Riwaya", cat_stationery: "Vifaa (Kalamu)",
+                cat_soap: "Sabuni ya Maji", cat_flour: "Unga Lishe",
+                capitalTitle: "Mtaji na Tathmini", capital: "Mtaji Uliowekezwa", runningCost: "Gharama za Uendeshaji", roi: "Kurudi kwa Mtaji",
+                updateCapital: "Sasisha Mtaji", totalDue: "JUMLA YA KULIPA", balance: "Hali ya Salio",
+                salesTrend: "Mwenendo wa Mauzo (Siku 7)", categoryDist: "Mapato kwa Kundi",
+                licenseTitle: "Usimamizi wa Leseni (TRA/BRELA)", licenseType: "Aina ya Leseni", licenseCost: "Gharama", paymentDate: "Tarehe ya Malipo", nextDue: "Tarehe ya Kuisha",
+                addLicense: "Rekodi Malipo ya Leseni", paid: "IMELIPWA", overdue: "IMEISHA MUDA", dueSoon: "INAISHA KARIBUNI"
+            }
+        };
+
+        const INITIAL_CATEGORIES = ['cat_textbook', 'cat_religious', 'cat_novel', 'cat_stationery', 'cat_soap', 'cat_flour'];
+
+        // --- CHART COMPONENT ---
+        const ChartComponent = ({ type, data, options }) => {
+            const chartRef = useRef(null);
+            const canvasRef = useRef(null);
+
+            useEffect(() => {
+                const ctx = canvasRef.current.getContext('2d');
+                if (chartRef.current) {
+                    chartRef.current.destroy();
+                }
+                chartRef.current = new Chart(ctx, { type, data, options });
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [data, type, options]);
+
+            return <canvas ref={canvasRef} />;
+        };
+
+        const CategoryIcon = ({ type }) => {
+            const IconComponent = CategoryIcons[type];
+            return IconComponent ? <IconComponent /> : <span className="text-gray-400">?</span>;
+        };
+
+        function App() {
+            const [lang, setLang] = useState('en');
+            const [activeTab, setActiveTab] = useState('config');
+            
+            const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('ingu_inventory')) || []);
+            const [sales, setSales] = useState(() => JSON.parse(localStorage.getItem('ingu_sales')) || []);
+            const [expenses, setExpenses] = useState(() => JSON.parse(localStorage.getItem('ingu_expenses')) || []);
+            const [businessInfo, setBusinessInfo] = useState(() => JSON.parse(localStorage.getItem('ingu_business')) || { capital: 0 });
+            const [licenses, setLicenses] = useState(() => JSON.parse(localStorage.getItem('ingu_licenses')) || []);
+
+            // Forms
+            const [newItem, setNewItem] = useState({ name: '', category: 'cat_textbook', buyPrice: '', sellPrice: '' });
+            const [saleForm, setSaleForm] = useState({ itemId: '', qty: 1, volume: '', weight: '', customer: '', isDebt: false });
+            const [expenseForm, setExpenseForm] = useState({ name: '', cost: '' });
+            const [licenseForm, setLicenseForm] = useState({ type: 'brela', cost: '', date: '' });
+            const [capitalInput, setCapitalInput] = useState('');
+
+            // Persistence
+            useEffect(() => { localStorage.setItem('ingu_inventory', JSON.stringify(inventory)); }, [inventory]);
+            useEffect(() => { localStorage.setItem('ingu_sales', JSON.stringify(sales)); }, [sales]);
+            useEffect(() => { localStorage.setItem('ingu_expenses', JSON.stringify(expenses)); }, [expenses]);
+            useEffect(() => { localStorage.setItem('ingu_business', JSON.stringify(businessInfo)); }, [businessInfo]);
+            useEffect(() => { localStorage.setItem('ingu_licenses', JSON.stringify(licenses)); }, [licenses]);
+
+            const t = TRANSLATIONS[lang];
+
+            // Calculations
+            const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
+            const totalDebt = sales.filter(s => s.isDebt).reduce((acc, s) => acc + s.total, 0);
+            const totalExpensesVal = expenses.reduce((acc, e) => acc + e.cost, 0);
+            const totalCOGS = sales.reduce((acc, sale) => {
+                const item = inventory.find(i => i.id == sale.itemId);
+                return acc + (item ? (item.buyPrice * sale.unitsSold) : 0);
+            }, 0);
+            const netProfit = totalRevenue - totalCOGS - totalExpensesVal;
+
+            // --- ANALYTICS DATA PREP ---
+            const getLast7DaysSales = () => {
+                const days = {};
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    days[d.toISOString().split('T')[0]] = 0;
+                }
+                sales.forEach(s => {
+                    const date = s.date.split('T')[0];
+                    if (days.hasOwnProperty(date)) days[date] += s.total;
+                });
+                return days;
+            };
+
+            const getSalesByCategory = () => {
+                const cats = {};
+                sales.forEach(s => {
+                    cats[s.category] = (cats[s.category] || 0) + s.total;
+                });
+                return cats;
+            };
+
+            const salesTrendData = {
+                labels: Object.keys(getLast7DaysSales()),
+                datasets: [{
+                    label: 'Revenue',
+                    data: Object.values(getLast7DaysSales()),
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            };
+
+            const categoryData = {
+                labels: Object.keys(getSalesByCategory()).map(k => t[k] || k),
+                datasets: [{
+                    data: Object.values(getSalesByCategory()),
+                    backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#06b6d4', '#b45309'],
+                    borderWidth: 0
+                }]
+            };
+
+            const currentSaleItem = inventory.find(i => i.id == saleForm.itemId);
+            const currentSaleTotal = currentSaleItem ? currentSaleItem.sellPrice * saleForm.qty : 0;
+
+            // --- HANDLERS ---
+            const handleAddItem = () => {
+                if (!newItem.name.trim()) return alert("Error: Please enter an Item Name."); 
+                if (!newItem.buyPrice || parseFloat(newItem.buyPrice) <= 0) return alert("Error: Invalid Buying Price.");
+                const item = { id: Date.now(), ...newItem, buyPrice: parseFloat(newItem.buyPrice), sellPrice: parseFloat(newItem.sellPrice) };
+                setInventory([...inventory, item]);
+                setNewItem({ name: '', category: 'cat_textbook', buyPrice: '', sellPrice: '' });
+                alert("Item Saved!");
+            };
+
+            const handleRecordSale = () => {
+                const item = inventory.find(i => i.id == saleForm.itemId);
+                if (!item) return;
+                const newSale = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    itemId: item.id,
+                    itemName: item.name,
+                    category: item.category,
+                    quantity: saleForm.qty,
+                    total: item.sellPrice * saleForm.qty,
+                    customer: saleForm.customer || 'Guest',
+                    isDebt: saleForm.isDebt,
+                    unitsSold: saleForm.qty 
+                };
+                setSales([newSale, ...sales]);
+                setSaleForm({ itemId: '', qty: 1, volume: '', weight: '', customer: '', isDebt: false });
+                alert("Sale Recorded!");
+            };
+
+            const handleAddLicense = () => {
+                if (!licenseForm.cost || !licenseForm.date) return alert("Please fill all fields");
+                const typeInfo = LICENSE_TYPES.find(t => t.id === licenseForm.type);
+                
+                // Calculate next date
+                const paymentDate = new Date(licenseForm.date);
+                const nextDate = new Date(paymentDate);
+                nextDate.setMonth(paymentDate.getMonth() + typeInfo.interval);
+
+                const newLic = { 
+                    id: Date.now(), 
+                    ...licenseForm, 
+                    cost: parseFloat(licenseForm.cost),
+                    name: typeInfo.name, 
+                    nextDue: nextDate.toISOString().split('T')[0]
+                };
+                setLicenses([...licenses, newLic]);
+                setLicenseForm({ type: 'brela', cost: '', date: '' });
+            };
+
+            const toggleDebt = (id) => {
+                setSales(sales.map(s => s.id === id ? { ...s, isDebt: !s.isDebt } : s));
+            };
+
+            const handleAddExpense = () => {
+                if(!expenseForm.name || !expenseForm.cost) return alert("Enter expense details");
+                setExpenses([...expenses, {id: Date.now(), name: expenseForm.name, cost: parseFloat(expenseForm.cost)}]); 
+                setExpenseForm({name:'', cost:''});
+            };
+
+            const updateCapital = () => {
+                if(!capitalInput || parseFloat(capitalInput) < 0) return;
+                setBusinessInfo({...businessInfo, capital: parseFloat(capitalInput)});
+                setCapitalInput('');
+            };
+
+            const exportData = () => {
+                const headers = ["Date", "Item", "Category", "Qty", "Total", "Is Debt", "Customer"];
+                const rows = sales.map(s => [s.date.split('T')[0], s.itemName, s.category, s.quantity, s.total, s.isDebt ? "YES":"NO", s.customer]);
+                let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", "ingu_report.csv");
+                document.body.appendChild(link);
+                link.click();
+            };
+
+            const resetSystem = () => {
+                if (window.confirm("WARNING: RESET SYSTEM?\n\nThis will delete ALL data.")) {
+                    setInventory([]); setSales([]); setExpenses([]); setBusinessInfo({capital: 0}); setLicenses([]);
+                    localStorage.clear();
+                    alert("System Reset.");
+                }
+            };
+
+            const formatMoney = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(n);
+
+            const getLicenseStatus = (nextDueDate) => {
+                const today = new Date();
+                const due = new Date(nextDueDate);
+                const diffTime = due - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays < 0) return { label: t.overdue, color: 'bg-red-100 text-red-700' };
+                if (diffDays < 30) return { label: t.dueSoon, color: 'bg-orange-100 text-orange-700' };
+                return { label: t.paid, color: 'bg-green-100 text-green-700' };
+            };
+
+            return (
+                <div className="flex flex-col md:flex-row w-full h-full bg-slate-100 overflow-hidden">
+                    
+                    {/* SIDEBAR RESPONSIVE */}
+                    <aside className="md:w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 shrink-0">
+                        <div className="p-4 md:p-6 border-b border-slate-700 flex justify-between items-center md:block">
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-bold tracking-widest text-white">INGU</h1>
+                                <p className="text-xs text-slate-400 uppercase tracking-widest hidden md:block">Analytics</p>
+                            </div>
+                            <span className="md:hidden font-bold text-lg bg-indigo-600 px-2 rounded">IA</span>
+                        </div>
+
+                        {/* Navigation - Horizontal scroll on mobile, Vertical on desktop */}
+                        <nav className="flex-1 p-2 md:p-4 space-x-2 md:space-x-0 md:space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible no-scrollbar">
+                            {[
+                                { id: 'dashboard', icon: Icons.Dashboard, label: t.dashboard },
+                                { id: 'analytics', icon: Icons.Analytics, label: t.analytics },
+                                { id: 'sales', icon: Icons.Sale, label: t.sales },
+                                { id: 'financials', icon: Icons.Financial, label: t.financials },
+                                { id: 'licenses', icon: Icons.License, label: t.licenses },
+                                { id: 'config', icon: Icons.Config, label: t.config },
+                                { id: 'expenses', icon: Icons.Expense, label: t.expenses },
+                                { id: 'debts', icon: Icons.Debt, label: t.debts },
+                            ].map(menu => (
+                                <button key={menu.id} onClick={() => setActiveTab(menu.id)} 
+                                    className={`flex-shrink-0 flex items-center gap-2 md:gap-4 p-2 md:p-3 rounded-md transition-all duration-300 text-sm md:text-base ${activeTab === menu.id ? 'bg-indigo-600 text-white shadow-lg md:translate-x-1' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                                    {menu.icon()} 
+                                    <span className="hidden md:inline font-medium">{menu.label}</span>
+                                    <span className="md:hidden">{menu.label.substring(0, 3)}</span>
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div className="hidden md:block p-4 border-t border-slate-700 space-y-2">
+                             <button onClick={exportData} className="w-full flex items-center gap-3 p-3 text-emerald-400 hover:bg-slate-800 rounded transition text-sm">
+                                {Icons.Download()} <span className="hidden md:inline">{t.export}</span>
+                            </button>
+                            <button onClick={resetSystem} className="w-full flex items-center gap-3 p-3 text-red-400 hover:bg-red-900/30 rounded transition text-sm">
+                                {Icons.Trash()} <span className="hidden md:inline">{t.reset}</span>
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 md:px-8 shadow-sm z-10 shrink-0">
+                            <h2 className="text-xl md:text-2xl font-bold text-slate-800 truncate">{t[activeTab]}</h2>
+                            <div className="flex gap-2">
+                                <button onClick={() => setLang(lang === 'en' ? 'sw' : 'en')} className="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 border border-slate-300 px-3 py-1 rounded-full transition">
+                                    {lang === 'en' ? 'SW' : 'EN'}
+                                </button>
+                                {/* Mobile Reset/Export in Header */}
+                                <div className="md:hidden flex gap-2">
+                                    <button onClick={exportData} className="text-emerald-600"><Icons.Download/></button>
+                                    <button onClick={resetSystem} className="text-red-600"><Icons.Trash/></button>
+                                </div>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                            
+                            {/* DASHBOARD */}
+                            {activeTab === 'dashboard' && (
+                                <div className="space-y-8 fade-in">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                        <StatCard title={t.totalRevenue} value={formatMoney(totalRevenue)} color="text-indigo-700" bg="bg-indigo-50" border="border-indigo-200" />
+                                        <StatCard title={t.netProfit} value={formatMoney(netProfit)} color="text-emerald-700" bg="bg-emerald-50" border="border-emerald-200" />
+                                        <StatCard title={t.totalExpenses} value={formatMoney(totalExpensesVal)} color="text-rose-700" bg="bg-rose-50" border="border-rose-200" />
+                                        <StatCard title={t.outstandingDebts} value={formatMoney(totalDebt)} color="text-amber-700" bg="bg-amber-50" border="border-amber-200" />
+                                    </div>
+                                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="p-5 border-b border-slate-100 bg-slate-50">
+                                            <h3 className="font-bold text-lg text-slate-700">{t.recentSales}</h3>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left min-w-[500px]">
+                                                <thead className="bg-white text-slate-500 border-b border-slate-200">
+                                                    <tr><th className="p-4 font-normal uppercase text-xs tracking-wider">Item</th><th className="p-4 font-normal uppercase text-xs tracking-wider">Date</th><th className="p-4 font-normal uppercase text-xs tracking-wider">Amount</th></tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {sales.slice(0, 8).map(s => (
+                                                        <tr key={s.id} className="hover:bg-slate-50 transition">
+                                                            <td className="p-4 font-medium text-slate-800 flex items-center gap-3">
+                                                                <div className="p-2 bg-slate-100 rounded-full"><CategoryIcon type={s.category} /></div>
+                                                                <div>{s.itemName} <span className="block text-xs text-slate-400">Qty: {s.quantity}</span></div>
+                                                            </td>
+                                                            <td className="p-4 text-slate-600">{s.date.split('T')[0]}</td>
+                                                            <td className="p-4 font-bold text-slate-900">{formatMoney(s.total)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ANALYTICS (GRAPHS) */}
+                            {activeTab === 'analytics' && (
+                                <div className="space-y-8 fade-in">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                                            <h3 className="text-lg font-bold mb-4 text-slate-700">{t.salesTrend}</h3>
+                                            <div className="h-64">
+                                                <ChartComponent type="line" data={salesTrendData} options={{ responsive: true, maintainAspectRatio: false }} />
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                                            <h3 className="text-lg font-bold mb-4 text-slate-700">{t.categoryDist}</h3>
+                                            <div className="h-64 flex justify-center">
+                                                <ChartComponent type="doughnut" data={categoryData} options={{ responsive: true, maintainAspectRatio: false }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* LICENSES (NEW TAB) */}
+                            {activeTab === 'licenses' && (
+                                <div className="space-y-8 fade-in">
+                                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200 max-w-2xl mx-auto">
+                                        <h3 className="text-xl font-bold mb-4 text-slate-800 border-b pb-2">{t.addLicense}</h3>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t.licenseType}</label>
+                                                <select className="w-full p-3 border border-slate-300 rounded bg-slate-50" value={licenseForm.type} onChange={e => setLicenseForm({...licenseForm, type: e.target.value})}>
+                                                    {LICENSE_TYPES.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                                </select>
+                                                <p className="text-xs text-blue-500 mt-1 italic">
+                                                    * Reminder calculated based on {LICENSE_TYPES.find(l => l.id === licenseForm.type)?.label} renewal cycle.
+                                                </p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <InputGroup label={t.licenseCost} type="number" value={licenseForm.cost} onChange={v => setLicenseForm({...licenseForm, cost: v})} />
+                                                <InputGroup label={t.paymentDate} type="date" value={licenseForm.date} onChange={v => setLicenseForm({...licenseForm, date: v})} />
+                                            </div>
+                                            <button onClick={handleAddLicense} className="w-full bg-slate-900 text-white py-3 font-bold rounded hover:bg-indigo-700 transition">Save Record</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {licenses.map(lic => {
+                                            const status = getLicenseStatus(lic.nextDue);
+                                            return (
+                                                <div key={lic.id} className="bg-white p-6 rounded-lg shadow border border-slate-200 relative overflow-hidden">
+                                                    <div className={`absolute top-0 right-0 px-3 py-1 text-xs font-bold ${status.color} rounded-bl-lg`}>{status.label}</div>
+                                                    <h4 className="font-bold text-lg text-slate-800 mb-1">{lic.name}</h4>
+                                                    <p className="text-sm text-slate-500 mb-4">{t.paymentDate}: {lic.date}</p>
+                                                    <div className="flex justify-between items-end border-t pt-4">
+                                                        <div>
+                                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t.nextDue}</p>
+                                                            <p className="font-bold text-indigo-600">{lic.nextDue}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t.licenseCost}</p>
+                                                            <p className="font-bold text-slate-800">{formatMoney(lic.cost)}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                        {licenses.length === 0 && (
+                                            <div className="col-span-full text-center p-8 text-slate-400 italic">No license payments recorded yet.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SALES */}
+                            {activeTab === 'sales' && (
+                                <div className="max-w-2xl mx-auto fade-in">
+                                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200">
+                                        <h2 className="text-2xl md:text-3xl font-bold mb-6 text-slate-800 border-b pb-4">{t.sales}</h2>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500">{t.itemName}</label>
+                                                <select className="w-full p-4 text-lg border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50" 
+                                                    onChange={e => setSaleForm({...saleForm, itemId: e.target.value})} value={saleForm.itemId}>
+                                                    <option value="">-- Select Item --</option>
+                                                    {inventory.map(i => <option key={i.id} value={i.id}>{i.name} — {formatMoney(i.sellPrice)}</option>)}
+                                                </select>
+                                            </div>
+
+                                            {saleForm.itemId && (
+                                                <div className="bg-slate-50 p-6 rounded border border-slate-200 space-y-5 fade-in">
+                                                    <div className="flex items-center gap-4 pb-4 border-b border-slate-200">
+                                                        <div className="p-3 bg-white rounded shadow-sm"><CategoryIcon type={inventory.find(i => i.id == saleForm.itemId)?.category} /></div>
+                                                        <div className="flex-1"><span className="block text-sm text-slate-500">Selected Item</span><span className="font-bold text-lg">{inventory.find(i => i.id == saleForm.itemId)?.name}</span></div>
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-4">
+                                                        <div>
+                                                            <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t.quantity}</label>
+                                                            <input type="number" min="1" className="w-full p-3 border border-slate-300 rounded text-center font-bold" value={saleForm.qty} onChange={e => setSaleForm({...saleForm, qty: parseInt(e.target.value)})} />
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t.customer}</label>
+                                                            <input type="text" className="w-full p-3 border border-slate-300 rounded" placeholder="Optional" onChange={e => setSaleForm({...saleForm, customer: e.target.value})} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-indigo-900 text-white p-4 rounded text-center shadow-inner">
+                                                        <span className="block text-xs uppercase tracking-widest opacity-70 mb-1">{t.totalDue}</span>
+                                                        <span className="text-3xl font-bold">{formatMoney(currentSaleTotal)}</span>
+                                                    </div>
+                                                    <label className="flex items-center gap-3 p-3 border border-red-200 bg-red-50 rounded cursor-pointer hover:bg-red-100 transition">
+                                                        <input type="checkbox" className="w-5 h-5 accent-red-600" checked={saleForm.isDebt} onChange={e => setSaleForm({...saleForm, isDebt: e.target.checked})} />
+                                                        <span className="text-red-800 font-bold">{t.pending}</span>
+                                                    </label>
+                                                </div>
+                                            )}
+                                            <button onClick={handleRecordSale} disabled={!saleForm.itemId} className="w-full bg-slate-900 text-white py-4 text-lg font-bold uppercase tracking-widest hover:bg-indigo-700 transition disabled:bg-slate-300 disabled:cursor-not-allowed shadow-lg">{t.recordSale}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* FINANCIALS */}
+                            {activeTab === 'financials' && (
+                                <div className="space-y-8 fade-in">
+                                    <div className="bg-slate-900 text-white p-8 rounded-lg shadow-lg">
+                                        <h3 className="text-xl font-bold mb-2 uppercase tracking-widest opacity-80">{t.capitalTitle}</h3>
+                                        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mt-4">
+                                            <div><p className="text-sm opacity-60 mb-1">{t.capital}</p><h2 className="text-4xl font-bold">{formatMoney(businessInfo.capital)}</h2></div>
+                                            <div className="flex gap-2 w-full md:w-auto">
+                                                <input type="number" placeholder="Enter Amount" className="p-3 rounded text-slate-900 w-full md:w-48" value={capitalInput} onChange={e => setCapitalInput(e.target.value)} />
+                                                <button onClick={updateCapital} className="bg-indigo-600 px-6 py-3 rounded font-bold hover:bg-indigo-500">{t.updateCapital}</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                            <h4 className="font-bold text-gray-500 text-sm uppercase tracking-wider mb-4">{t.runningCost}</h4>
+                                            <div className="text-3xl font-bold text-red-600 mb-2">{formatMoney(totalExpensesVal)}</div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4"><div className="bg-red-600 h-2.5 rounded-full" style={{width: `${Math.min((totalExpensesVal / (totalRevenue || 1)) * 100, 100)}%`}}></div></div>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                            <h4 className="font-bold text-gray-500 text-sm uppercase tracking-wider mb-4">{t.roi}</h4>
+                                            <div className="flex justify-between items-end mb-2">
+                                                <span className="text-3xl font-bold text-emerald-600">{businessInfo.capital > 0 ? ((netProfit / businessInfo.capital) * 100).toFixed(1) : 0}%</span>
+                                                <span className="text-sm text-gray-500">{t.balance}: {formatMoney(businessInfo.capital - netProfit)}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4"><div className="bg-emerald-600 h-2.5 rounded-full" style={{width: `${Math.min((netProfit / (businessInfo.capital || 1)) * 100, 100)}%`}}></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CONFIG */}
+                            {activeTab === 'config' && (
+                                <div className="space-y-8 fade-in">
+                                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200">
+                                        <h3 className="text-xl font-bold mb-6 text-slate-800 border-b pb-2">{t.addItem}</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                            <InputGroup label={t.itemName} value={newItem.name} onChange={v => setNewItem({...newItem, name: v})} />
+                                            <div className="space-y-1">
+                                                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500">{t.category}</label>
+                                                <select className="w-full p-3 border border-slate-300 rounded bg-white" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
+                                                    {INITIAL_CATEGORIES.map(c => <option key={c} value={c}>{t[c]}</option>)}
+                                                </select>
+                                            </div>
+                                            <InputGroup label={t.buyPrice} type="number" value={newItem.buyPrice} onChange={v => setNewItem({...newItem, buyPrice: v})} />
+                                            <InputGroup label={t.sellPrice} type="number" value={newItem.sellPrice} onChange={v => setNewItem({...newItem, sellPrice: v})} />
+                                        </div>
+                                        <button onClick={handleAddItem} className="mt-6 px-8 py-3 bg-indigo-600 text-white font-bold uppercase tracking-wider hover:bg-indigo-700 rounded shadow cursor-pointer">{t.save}</button>
+                                    </div>
+                                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left min-w-[600px]">
+                                                <thead className="bg-slate-50 border-b border-slate-200">
+                                                    <tr><th className="p-4 text-xs uppercase tracking-wider text-slate-500">{t.itemName}</th><th className="p-4 text-xs uppercase tracking-wider text-slate-500">{t.buyPrice}</th><th className="p-4 text-xs uppercase tracking-wider text-slate-500">{t.sellPrice}</th></tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {inventory.map(i => (
+                                                        <tr key={i.id} className="hover:bg-slate-50">
+                                                            <td className="p-4 font-medium flex items-center gap-3">
+                                                                <div className="p-2 bg-slate-100 rounded-full"><CategoryIcon type={i.category} /></div>
+                                                                <div>{i.name} <span className="block text-xs text-slate-400 font-normal">{t[i.category]}</span></div>
+                                                            </td>
+                                                            <td className="p-4 text-slate-500">{formatMoney(i.buyPrice)}</td>
+                                                            <td className="p-4 font-bold text-slate-800">{formatMoney(i.sellPrice)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* EXPENSES */}
+                            {activeTab === 'expenses' && (
+                                <div className="max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200 fade-in">
+                                    <h2 className="text-2xl font-bold mb-6 text-slate-800">{t.expenses}</h2>
+                                    <div className="flex flex-col md:flex-row gap-4 mb-8">
+                                        <input className="flex-1 p-3 border border-slate-300 rounded" placeholder="Description" value={expenseForm.name} onChange={e => setExpenseForm({...expenseForm, name: e.target.value})} />
+                                        <input type="number" className="w-full md:w-32 p-3 border border-slate-300 rounded" placeholder="Cost" value={expenseForm.cost} onChange={e => setExpenseForm({...expenseForm, cost: e.target.value})} />
+                                        <button onClick={handleAddExpense} className="bg-rose-600 text-white px-6 py-3 font-bold uppercase tracking-wider rounded hover:bg-rose-700">Add</button>
+                                    </div>
+                                    <ul className="divide-y divide-slate-100">
+                                        {expenses.map(e => (
+                                            <li key={e.id} className="py-4 flex justify-between items-center hover:bg-slate-50 px-2 rounded">
+                                                <span className="text-lg">{e.name}</span>
+                                                <span className="font-bold text-rose-600">{formatMoney(e.cost)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* DEBTS */}
+                            {activeTab === 'debts' && (
+                                <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200 fade-in">
+                                    <h2 className="text-2xl font-bold mb-6 text-slate-800 border-b pb-4">{t.debts} Management</h2>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left min-w-[600px]">
+                                            <thead className="bg-slate-50 text-slate-500">
+                                                <tr><th className="p-4 text-xs uppercase tracking-wider">{t.customer}</th><th className="p-4 text-xs uppercase tracking-wider">Details</th><th className="p-4 text-xs uppercase tracking-wider">Due</th><th className="p-4 text-xs uppercase tracking-wider">Action</th></tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {sales.filter(s => s.isDebt).map(s => (
+                                                    <tr key={s.id} className="hover:bg-slate-50">
+                                                        <td className="p-4 font-bold text-slate-800">{s.customer}</td>
+                                                        <td className="p-4 text-slate-600 flex items-center gap-2"><CategoryIcon type={s.category} />{s.itemName} ({s.quantity})</td>
+                                                        <td className="p-4 font-bold text-red-600">{formatMoney(s.total)}</td>
+                                                        <td className="p-4"><button onClick={() => toggleDebt(s.id)} className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-emerald-200">{t.markPaid}</button></td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const StatCard = ({ title, value, color, bg, border }) => (
+            <div className={`p-6 rounded-lg border ${border} ${bg} shadow-sm transition hover:shadow-md`}>
+                <p className={`text-xs uppercase tracking-widest font-bold mb-2 opacity-70 ${color}`}>{title}</p>
+                <h3 className={`text-3xl font-bold ${color}`}>{value}</h3>
+            </div>
+        );
+
+        const InputGroup = ({ label, value, onChange, type="text" }) => (
+            <div className="space-y-1">
+                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500">{label}</label>
+                <input type={type} className="w-full p-3 border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" value={value} onChange={e => onChange(e.target.value)} />
+            </div>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
