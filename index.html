@@ -1,672 +1,1573 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INGU STORE Book Analytics</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INGU STORE — Analytics Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+/* ═══════════════════════════════════
+   DESIGN TOKENS — light mode base
+═══════════════════════════════════ */
+:root {
+  --ink:#1a1208;--bark:#2d1e0f;--mahogany:#3d2b1a;--umber:#6b4c2a;
+  --amber:#c4862b;--amber-2:#e09b3d;--gold:#d4a843;--gold-light:#f0c96a;
+  --cream:#fdf6ec;--ivory:#fefaf3;--paper:#f7efe0;--paper-2:#ede3cf;
+  --sage:#4a7c59;--sage-2:#3a6347;--rose:#c0392b;--rose-2:#e74c3c;--sky:#2471a3;
+  --tx-1:#1a1208;--tx-2:#5a3e28;--tx-3:#9a7d60;--tx-inv:#fdf6ec;
+  --shadow:0 4px 24px rgba(26,18,8,0.10);--shadow-lg:0 12px 48px rgba(26,18,8,0.16);
+  --r:14px;--r-sm:8px;--ease:cubic-bezier(0.4,0,0.2,1);
+  /* transition all color changes */
+  --theme-transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease;
+}
 
-    <style>
-        /* TIMES NEW ROMAN MODERN AESTHETIC */
-        body {
-            font-family: 'Times New Roman', Times, serif;
-            background-color: #f0f2f5;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        input, select, button {
-            font-family: 'Times New Roman', Times, serif;
-        }
+/* ═══════════════════════════════════
+   DARK MODE
+═══════════════════════════════════ */
+body.dark {
+  --ink:#e8ddd0;
+  --bark:#100c08;
+  --mahogany:#18120c;
+  --umber:#c9a87c;
+  --cream:#18120c;
+  --ivory:#1e160e;
+  --paper:#160f08;
+  --paper-2:#241a10;
+  --tx-1:#e8ddd0;
+  --tx-2:#c9a87c;
+  --tx-3:#806050;
+  --tx-inv:#18120c;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg:0 12px 48px rgba(0,0,0,0.55);
+}
+body.dark .toast { background: #241a10; color: var(--tx-1); }
+body.dark .field input,
+body.dark .field select { background: var(--paper); color: var(--tx-1); border-color: var(--paper-2); }
+body.dark .field input:focus,
+body.dark .field select:focus { background: var(--paper-2); }
+body.dark table { background: transparent; }
+body.dark .total-due-box { background: linear-gradient(135deg,#100c08,#1e160e); }
 
-        /* Responsive & Smooth Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--paper);
+  color:var(--tx-1);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  transition: var(--theme-transition);
+}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--paper-2);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--umber);}
+
+/* ── TOAST ── */
+.toast{padding:13px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);animation:toastIn .32s cubic-bezier(.34,1.56,.64,1) forwards;max-width:310px;border-left:3px solid transparent;background:#fff;}
+.toast.success{border-left-color:var(--sage);color:var(--sage-2);}
+.toast.error{border-left-color:var(--rose);color:var(--rose);}
+.toast.info{border-left-color:var(--amber);color:var(--umber);}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+
+/* ── LAYOUT ── */
+.layout{display:flex;height:100vh;width:100%;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:256px;background:var(--bark);display:flex;flex-direction:column;flex-shrink:0;position:relative;overflow:hidden;transition:var(--theme-transition);}
+.sidebar::before{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,rgba(196,134,43,.4),transparent);}
+.sidebar::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");pointer-events:none;}
+.sidebar-header{padding:26px 22px 18px;border-bottom:1px solid rgba(196,134,43,.15);}
+.sidebar-logo{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--gold-light);letter-spacing:-.02em;line-height:1;}
+.sidebar-tagline{font-size:10px;font-weight:500;color:rgba(253,246,236,.3);letter-spacing:.18em;text-transform:uppercase;margin-top:4px;}
+.sidebar-nav{flex:1;padding:14px 10px;overflow-y:auto;}
+.nav-group-label{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(253,246,236,.22);padding:10px 12px 5px;}
+.nav-btn{display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:none;border-radius:var(--r-sm);background:transparent;color:rgba(253,246,236,.48);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:all .18s var(--ease);margin-bottom:2px;position:relative;}
+.nav-btn:hover{background:rgba(253,246,236,.06);color:rgba(253,246,236,.85);}
+.nav-btn.active{background:linear-gradient(135deg,rgba(196,134,43,.22),rgba(196,134,43,.1));color:var(--gold-light);font-weight:600;}
+.nav-btn.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:linear-gradient(180deg,var(--amber),var(--gold));border-radius:0 3px 3px 0;}
+.nav-badge{margin-left:auto;background:var(--rose);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;line-height:1.4;}
+.sidebar-footer{padding:12px 10px 18px;border-top:1px solid rgba(196,134,43,.12);}
+
+/* ── MAIN / TOPBAR ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:60px;background:var(--ivory);border-bottom:1px solid var(--paper-2);display:flex;align-items:center;justify-content:space-between;padding:0 30px;flex-shrink:0;box-shadow:0 1px 10px rgba(26,18,8,.06);transition:var(--theme-transition);}
+.topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.02em;}
+.lang-toggle{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2);border:1.5px solid var(--paper-2);background:none;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .18s;font-family:'DM Sans',sans-serif;}
+.lang-toggle:hover{border-color:var(--amber);color:var(--amber);}
+.content{flex:1;overflow-y:auto;padding:26px 30px;}
+
+/* ── ICON TOPBAR BUTTONS ── */
+.ico-btn {
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--paper-2);background:transparent;cursor:pointer;
+  transition:all .18s var(--ease);color:var(--tx-2);flex-shrink:0;
+}
+.ico-btn:hover{border-color:var(--amber);color:var(--amber);background:rgba(196,134,43,.07);}
+.ico-btn.active{border-color:var(--amber);color:var(--amber);background:rgba(196,134,43,.1);}
+
+/* ═══════════════════════════════════
+   THEME PANEL
+═══════════════════════════════════ */
+.theme-overlay{
+  position:fixed;inset:0;background:rgba(26,18,8,.4);z-index:7999;
+  opacity:0;pointer-events:none;transition:opacity .28s ease;
+  backdrop-filter:blur(2px);
+}
+.theme-overlay.open{opacity:1;pointer-events:auto;}
+
+.theme-panel{
+  position:fixed;top:0;right:-360px;width:340px;height:100vh;
+  background:var(--ivory);border-left:1px solid var(--paper-2);
+  box-shadow:-12px 0 48px rgba(26,18,8,.2);z-index:8000;
+  display:flex;flex-direction:column;
+  transition:right .32s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.theme-panel.open{right:0;}
+.theme-panel-head{
+  padding:20px 22px 16px;border-bottom:1px solid var(--paper-2);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.theme-panel-body{flex:1;overflow-y:auto;padding:20px 22px;display:flex;flex-direction:column;gap:24px;}
+
+.tp-section-label{
+  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--tx-3);margin-bottom:12px;display:flex;align-items:center;gap:7px;
+}
+.tp-section-label::after{content:'';flex:1;height:1px;background:var(--paper-2);}
+
+/* Mode toggle */
+.mode-row{display:flex;gap:10px;}
+.mode-btn{
+  flex:1;padding:12px 8px;border-radius:var(--r-sm);border:1.5px solid var(--paper-2);
+  background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;
+  font-size:12px;font-weight:700;color:var(--tx-2);transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+}
+.mode-btn:hover:not(.mode-active){border-color:var(--amber);color:var(--tx-1);}
+.mode-btn.mode-active{
+  background:var(--bark);border-color:var(--bark);color:var(--gold-light);
+  box-shadow:0 4px 16px rgba(26,18,8,.2);
+}
+.mode-preview{
+  width:100%;height:40px;border-radius:6px;overflow:hidden;position:relative;
+  border:1px solid rgba(26,18,8,.08);
+}
+
+/* Color swatches */
+.swatch-row{display:flex;gap:8px;flex-wrap:wrap;}
+.swatch{
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  border:3px solid transparent;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.swatch:hover{transform:scale(1.1);}
+.swatch.swatch-active{border-color:var(--ink);transform:scale(1.12);}
+
+/* Preset cards */
+.preset-list{display:flex;flex-direction:column;gap:8px;}
+.preset-card{
+  padding:11px 14px;border-radius:var(--r-sm);border:1.5px solid var(--paper-2);
+  cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;gap:12px;
+  background:transparent;
+}
+.preset-card:hover{border-color:var(--amber);background:rgba(196,134,43,.04);}
+.preset-card.preset-active{border-color:var(--amber);background:rgba(196,134,43,.07);}
+.preset-dots{display:flex;gap:4px;align-items:center;}
+.pdot{width:11px;height:11px;border-radius:50%;}
+.preset-info{flex:1;text-align:left;}
+.preset-info strong{display:block;font-size:12px;font-weight:700;color:var(--ink);}
+.preset-info span{font-size:10px;color:var(--tx-3);}
+
+/* Custom color row */
+.custom-color-row{display:flex;gap:10px;align-items:center;}
+.color-picker-wrap{
+  width:38px;height:38px;border-radius:var(--r-sm);overflow:hidden;
+  border:1.5px solid var(--paper-2);cursor:pointer;position:relative;flex-shrink:0;
+}
+.color-picker-wrap input[type=color]{
+  position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);
+  cursor:pointer;border:none;padding:0;background:transparent;
+  -webkit-appearance:none;
+}
+
+/* ── METRICS ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:22px;}
+.metric-card{background:var(--ivory);border-radius:var(--r);padding:18px 20px;border:1px solid var(--paper-2);box-shadow:var(--shadow);position:relative;overflow:hidden;transition:all .22s var(--ease);}
+.metric-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0;}
+.metric-card.green::before{background:linear-gradient(90deg,var(--sage),#6abf80);}
+.metric-card.amber::before{background:linear-gradient(90deg,var(--amber),var(--gold-light));}
+.metric-card.red::before{background:linear-gradient(90deg,var(--rose),#e57373);}
+.metric-card.blue::before{background:linear-gradient(90deg,var(--sky),#5dade2);}
+.metric-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+.metric-card.green .metric-icon{background:rgba(74,124,89,.1);color:var(--sage);}
+.metric-card.amber .metric-icon{background:rgba(196,134,43,.1);color:var(--amber);}
+.metric-card.red   .metric-icon{background:rgba(192,57,43,.1);color:var(--rose);}
+.metric-card.blue  .metric-icon{background:rgba(36,113,163,.1);color:var(--sky);}
+.metric-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--tx-3);margin-bottom:4px;}
+.metric-value{font-family:'DM Mono',monospace;font-size:21px;font-weight:500;color:var(--ink);line-height:1;}
+.metric-sub{font-size:11px;color:var(--tx-3);margin-top:5px;}
+
+/* ── CARD ── */
+.card{background:var(--ivory);border-radius:var(--r);border:1px solid var(--paper-2);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px;transition:var(--theme-transition);}
+.card-header{padding:16px 20px 14px;border-bottom:1px solid var(--paper-2);display:flex;align-items:center;justify-content:space-between;min-width:0;}
+.card-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--ink);min-width:0;}
+.card-body{padding:20px;overflow:hidden;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--paper);color:var(--tx-3);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;padding:11px 15px;text-align:left;border-bottom:1px solid var(--paper-2);white-space:nowrap;}
+td{padding:12px 15px;font-size:13px;color:var(--tx-1);border-bottom:1px solid rgba(26,18,8,.04);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--paper);}
+
+/* ── FORM ── */
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+/* Prevent grid children from overflowing their columns */
+.form-grid-2 > *, .form-grid-4 > *{min-width:0;}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--tx-3);}
+.field input,.field select,.field textarea{
+  padding:10px 13px;border:1.5px solid var(--paper-2);border-radius:var(--r-sm);
+  background:var(--ivory);color:var(--ink);font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:500;outline:none;transition:all .16s var(--ease);
+  -webkit-appearance:none;
+  /* Critical: prevent inputs from blowing out grid columns */
+  width:100%;min-width:0;box-sizing:border-box;
+}
+.field input:focus,.field select:focus{border-color:var(--amber);background:var(--ivory);box-shadow:0 0 0 3px rgba(196,134,43,.1);}
+.field input::placeholder{color:var(--tx-3);opacity:.6;}
+select option{background:var(--ivory);color:var(--ink);}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;border:none;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s var(--ease);letter-spacing:.02em;white-space:nowrap;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn:active:not(:disabled){transform:scale(.97);}
+.btn-primary{background:var(--bark);color:var(--cream);}
+.btn-primary:hover:not(:disabled){background:var(--mahogany);box-shadow:0 4px 16px rgba(26,18,8,.2);transform:translateY(-1px);}
+.btn-amber{background:var(--amber);color:#fff;}
+.btn-amber:hover:not(:disabled){background:var(--amber-2);box-shadow:0 4px 16px rgba(196,134,43,.3);transform:translateY(-1px);}
+.btn-green{background:var(--sage);color:#fff;}
+.btn-green:hover:not(:disabled){background:var(--sage-2);}
+.btn-red{background:var(--rose);color:#fff;}
+.btn-red:hover:not(:disabled){background:var(--rose-2);}
+.btn-ghost{background:transparent;color:var(--tx-2);border:1.5px solid var(--paper-2);}
+.btn-ghost:hover:not(:disabled){border-color:var(--umber);color:var(--umber);background:var(--paper);}
+.btn-sm{padding:6px 13px;font-size:11px;}
+.btn-full{width:100%;}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.badge-green{background:rgba(74,124,89,.1);color:var(--sage-2);border:1px solid rgba(74,124,89,.2);}
+.badge-green::before{background:var(--sage);}
+.badge-red{background:rgba(192,57,43,.1);color:var(--rose);border:1px solid rgba(192,57,43,.2);}
+.badge-red::before{background:var(--rose);}
+.badge-amber{background:rgba(196,134,43,.1);color:var(--umber);border:1px solid rgba(196,134,43,.2);}
+.badge-amber::before{background:var(--amber);}
+.badge-blue{background:rgba(36,113,163,.1);color:var(--sky);border:1px solid rgba(36,113,163,.2);}
+.badge-blue::before{background:var(--sky);}
+
+/* ── MISC ── */
+.progress-track{background:var(--paper-2);border-radius:4px;height:5px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;transition:width .8s var(--ease);}
+.total-due-box{background:linear-gradient(135deg,var(--bark),var(--mahogany));color:var(--cream);padding:18px 22px;border-radius:var(--r);text-align:center;position:relative;overflow:hidden;}
+.total-due-box::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;background:rgba(196,134,43,.12);border-radius:50%;}
+.total-due-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin-bottom:4px;}
+.total-due-value{font-family:'DM Mono',monospace;font-size:30px;font-weight:500;color:var(--gold-light);}
+.cat-icon-wrap{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(26,18,8,.08);}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.chart-wrap{height:270px;position:relative;}
+.empty-state{text-align:center;padding:44px 20px;color:var(--tx-3);}
+.empty-state-icon{margin-bottom:12px;opacity:.35;display:flex;justify-content:center;}
+.empty-state p{font-size:13px;font-style:italic;}
+.license-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;}
+.license-card{background:var(--ivory);border:1px solid var(--paper-2);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .2s;}
+.license-card:hover{box-shadow:var(--shadow-lg);}
+.license-card h4{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;margin-bottom:3px;margin-top:8px;}
+.capital-hero{background:linear-gradient(135deg,var(--bark) 0%,var(--mahogany) 60%,#2a1a0a 100%);border-radius:var(--r);padding:28px;color:var(--cream);position:relative;overflow:hidden;margin-bottom:18px;}
+.capital-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:rgba(196,134,43,.08);border-radius:50%;}
+.capital-hero::after{content:'';position:absolute;bottom:-40px;left:20px;width:120px;height:120px;background:rgba(196,134,43,.05);border-radius:50%;}
+.check-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--r-sm);border:1.5px solid var(--paper-2);cursor:pointer;transition:all .16s;}
+.check-row:hover{border-color:var(--rose);background:rgba(192,57,43,.04);}
+.check-row.checked{border-color:var(--rose);background:rgba(192,57,43,.06);}
+.check-row input[type=checkbox]{accent-color:var(--rose);width:16px;height:16px;}
+.search-wrap{position:relative;}
+.search-wrap input{padding-left:36px;}
+.search-icon-abs{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--tx-3);pointer-events:none;}
+.sec{animation:secIn .3s var(--ease) forwards;}
+@keyframes secIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.nav-icon-wrap{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.75;}
+.nav-btn.active .nav-icon-wrap{opacity:1;}
+.sales-split{display:grid;gap:20px;align-items:start;}
+
+/* ── SUPPLIER / PAYABLES ── */
+.ops-split{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+.how-to-box{background:linear-gradient(135deg,rgba(196,134,43,.06),rgba(196,134,43,.02));border:1px solid rgba(196,134,43,.2);border-radius:var(--r);padding:16px 18px;margin-bottom:18px;position:relative;overflow:hidden;}
+.how-to-box::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--amber),var(--gold));}
+.how-to-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.how-to-toggle h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);display:flex;align-items:center;gap:7px;}
+.how-to-body{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+.how-step{display:flex;gap:11px;align-items:flex-start;}
+.how-step-num{width:22px;height:22px;border-radius:50%;background:var(--amber);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.how-step-text{font-size:12px;color:var(--tx-2);line-height:1.5;}
+.how-step-text strong{color:var(--ink);font-weight:700;}
+.supplier-card{background:var(--ivory);border:1px solid var(--paper-2);border-radius:var(--r-sm);padding:13px 15px;display:flex;align-items:center;gap:12px;transition:all .18s;cursor:pointer;margin-bottom:8px;}
+.supplier-card:hover{border-color:var(--amber);box-shadow:var(--shadow);}
+.supplier-card.selected{border-color:var(--amber);background:rgba(196,134,43,.05);}
+.supplier-avatar{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--bark),var(--amber));display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;flex-shrink:0;font-family:'Playfair Display',serif;}
+.payable-row{display:flex;align-items:center;gap:10px;padding:'11px 15px';border-bottom:1px solid rgba(26,18,8,.04);}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;}
+.status-pill.paid{background:rgba(74,124,89,.1);color:var(--sage-2);border:1px solid rgba(74,124,89,.2);}
+.status-pill.unpaid{background:rgba(192,57,43,.08);color:var(--rose);border:1px solid rgba(192,57,43,.18);}
+.summary-stat{background:var(--paper);border-radius:var(--r-sm);padding:12px 14px;border:1px solid var(--paper-2);}
+.summary-stat .lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--tx-3);margin-bottom:4px;}
+.summary-stat .val{font-family:'DM Mono',monospace;font-size:17px;font-weight:500;}
+@media(max-width:900px){.ops-split{grid-template-columns:1fr!important;}}
+
+/* ── HAMBURGER + MOBILE SIDEBAR OVERLAY ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(26,18,8,.55);z-index:899;backdrop-filter:blur(2px);}
+.sidebar-overlay.show{display:block;}
+.hamburger{display:none;width:36px;height:36px;border-radius:var(--r-sm);border:1.5px solid var(--paper-2);background:transparent;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-2);flex-shrink:0;transition:all .18s;}
+.hamburger:hover{border-color:var(--amber);color:var(--amber);}
+.hamburger span{display:block;width:14px;height:1.8px;background:currentColor;border-radius:2px;transition:all .22s;}
+
+/* LARGE DESKTOP 1400px+ */
+@media(min-width:1400px){
+  .sales-split{grid-template-columns:420px 1fr!important;}
+}
+/* LAPTOP 900–1199px */
+@media(max-width:1199px){
+  .sidebar{width:220px;}
+  .sales-split{grid-template-columns:320px 1fr!important;}
+  .content{padding:20px 22px;}
+}
+/* TABLET LANDSCAPE 769–900px */
+@media(max-width:900px){
+  .sidebar{width:200px;}
+  .metrics-grid{grid-template-columns:1fr 1fr;}
+  .form-grid-4{grid-template-columns:1fr 1fr;}
+  .charts-grid{grid-template-columns:1fr;}
+  .license-grid{grid-template-columns:1fr 1fr;}
+  .sales-split{grid-template-columns:1fr!important;}
+  .theme-panel{width:300px;}
+  .topbar{padding:0 18px;}
+}
+/* TABLET PORTRAIT 600–768px */
+@media(max-width:768px){
+  .hamburger{display:flex;}
+  .sidebar{position:fixed;top:0;left:-280px;height:100vh;width:270px;z-index:900;transition:left .28s cubic-bezier(.4,0,.2,1);box-shadow:8px 0 40px rgba(26,18,8,.3);}
+  .sidebar.mobile-open{left:0;}
+  .main{height:100vh;overflow:hidden;flex:1;}
+  .content{overflow-y:auto;padding:16px 18px;}
+  .topbar{padding:0 14px;height:56px;}
+  .topbar-title{font-size:17px;}
+  .metrics-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .metric-card{padding:14px 15px;}
+  .metric-value{font-size:18px;}
+  .charts-grid{grid-template-columns:1fr;}
+  .license-grid{grid-template-columns:1fr 1fr;gap:12px;}
+  .sales-split{grid-template-columns:1fr!important;}
+  .ops-split{grid-template-columns:1fr!important;}
+  .form-grid-4{grid-template-columns:1fr 1fr;}
+  .card-body{padding:16px;}
+  .theme-panel{width:92vw;right:-95vw;}
+  .topbar-controls{gap:6px!important;}
+}
+/* MOBILE 481–599px */
+@media(max-width:599px){
+  body{overflow:auto;height:auto;}
+  .layout{flex-direction:column;height:auto;min-height:100vh;}
+  .main{height:auto;overflow:visible;}
+  .topbar{position:sticky;top:0;z-index:100;}
+  .content{overflow:visible;padding:12px 13px;}
+  .metrics-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+  .metric-card{padding:12px 13px;}
+  .metric-label{font-size:9px;}
+  .metric-value{font-size:16px;}
+  .metric-sub{font-size:10px;}
+  .form-grid-2,.form-grid-4{grid-template-columns:1fr;}
+  .charts-grid{grid-template-columns:1fr;}
+  .license-grid{grid-template-columns:1fr;}
+  .ops-split{grid-template-columns:1fr!important;}
+  .sales-split{grid-template-columns:1fr!important;}
+  .card{border-radius:10px;margin-bottom:13px;}
+  .card-header{padding:12px 14px 11px;}
+  .card-body{padding:13px;}
+  td,th{padding:9px 10px;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .total-due-value{font-size:24px;}
+  .how-step-text{font-size:11.5px;}
+}
+/* MOBILE SMALL ≤480px */
+@media(max-width:480px){
+  .topbar-title{font-size:15px;}
+  .metrics-grid{grid-template-columns:1fr 1fr;gap:8px;}
+  .metric-card{padding:11px 12px;}
+  .metric-value{font-size:14px;}
+  .field input,.field select{padding:9px 11px;font-size:12px;}
+  .btn{font-size:12px;padding:9px 14px;}
+  .btn-sm{padding:5px 10px;font-size:10.5px;}
+  .card-title{font-size:13px;}
+  .total-due-value{font-size:20px;}
+  .theme-panel{width:99vw;}
+}
+/* ULTRA SMALL ≤360px */
+@media(max-width:360px){
+  .metrics-grid{grid-template-columns:1fr;}
+  .topbar-title{font-size:13px;}
+  .content{padding:10px;}
+}
+
+</style>
 </head>
-<body class="text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
 
-    <div id="root" class="w-full h-full"></div>
+/* ════════════════════════════════════
+   SVG ICON LIBRARY
+════════════════════════════════════ */
+const SZ = { xs:12,sm:14,md:16,lg:20,xl:24 };
+const Ico = {
+  Dashboard:    ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+  Analytics:    ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  Sale:         ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+  Debt:         ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  Inventory:    ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+  Expense:      ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  Financial:    ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  License:      ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
+  Download:     ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Trash:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
+  Search:       ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Check:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  X:            ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Info:         ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  Globe:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  TrendUp:      ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  TrendDown:    ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>,
+  Coins:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><line x1="16.71" y1="13.88" x2="13.14" y2="17.42"/></svg>,
+  Book:         ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+  Cross:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>,
+  BookOpen:     ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  Pencil:       ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>,
+  Droplet:      ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+  Wheat:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94z"/><path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94z"/><path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94z"/><path d="M22 2 9 15"/></svg>,
+  AlertTriangle:({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  CheckCircle:  ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+  Calendar:     ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  Chart:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  ShoppingBag:  ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+  Package:      ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+  CreditCard:   ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  FileText:     ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  Banknote:     ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>,
+  Plus:         ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Truck:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
+  Building:     ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="2" width="18" height="20" rx="1"/><path d="M9 22V12h6v10"/><path d="M9 7h1"/><path d="M9 11h1"/><path d="M14 7h1"/><path d="M14 11h1"/></svg>,
+  Phone:        ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91A16 16 0 0 0 15 15.91l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+  ClipboardList:({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>,
+  ChevronDown:  ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+  ChevronUp:    ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
+  Moon:         ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+  Sun:          ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+  Palette:      ({s=SZ.md,c='currentColor'})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill={c}/><circle cx="17.5" cy="10.5" r=".5" fill={c}/><circle cx="8.5" cy="7.5" r=".5" fill={c}/><circle cx="6.5" cy="12.5" r=".5" fill={c}/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>,
+};
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+/* ── Categories ── */
+const CATS = [
+  {id:'cat_textbook',  label:'Textbook',    sw:'Vitabu (Masomo)',  Icon:Ico.Book,    color:'#2471a3',bg:'rgba(36,113,163,.1)'},
+  {id:'cat_religious', label:'Religious',   sw:'Vitabu vya Dini', Icon:Ico.Cross,   color:'#7d3c98',bg:'rgba(125,60,152,.1)'},
+  {id:'cat_novel',     label:'Novel',       sw:'Riwaya',           Icon:Ico.BookOpen,color:'#cb4335',bg:'rgba(203,67,53,.1)'},
+  {id:'cat_stationery',label:'Stationery',  sw:'Vifaa vya Kazi',  Icon:Ico.Pencil,  color:'#d35400',bg:'rgba(211,84,0,.1)'},
+  {id:'cat_soap',      label:'Liquid Soap', sw:'Sabuni ya Maji',  Icon:Ico.Droplet, color:'#17a589',bg:'rgba(23,165,137,.1)'},
+  {id:'cat_flour',     label:'Unga Lishe',  sw:'Unga Lishe',       Icon:Ico.Wheat,   color:'#b7950b',bg:'rgba(183,149,11,.1)'},
+];
+const getCat = id => CATS.find(c=>c.id===id)||CATS[0];
 
-        // --- ICONS ---
-        const Icons = {
-            Dashboard: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
-            Sale: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-            Analytics: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>,
-            Debt: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-            Expense: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
-            Config: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>,
-            Financial: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
-            License: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
-            Download: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
-            Trash: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-        };
+const LICENSE_TYPES = [
+  {id:'brela',name:'BRELA (Annual Return)',interval:12,label:'Annual'},
+  {id:'tra_clearance',name:'TRA — Tax Clearance',interval:12,label:'Annual'},
+  {id:'tra_quarterly',name:'TRA — Quarterly Tax',interval:3,label:'Quarterly'},
+  {id:'business_license',name:'Municipal Business License',interval:12,label:'Annual'},
+  {id:'mpesa',name:'M-Pesa Agent License',interval:12,label:'Annual'},
+  {id:'fire',name:'Fire & Rescue Force',interval:12,label:'Annual'},
+  {id:'osha',name:'OSHA Compliance',interval:12,label:'Annual'},
+];
 
-        const CategoryIcons = {
-            cat_textbook: () => <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
-            cat_religious: () => <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
-            cat_novel: () => <svg className="w-5 h-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>,
-            cat_stationery: () => <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
-            cat_soap: () => <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>,
-            cat_flour: () => <svg className="w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-        };
+/* ── Translations ── */
+const T = {
+  en:{
+    dashboard:'Dashboard',analytics:'Analytics',salesInv:'Sales & Inventory',expenses:'Expenses',
+    debts:'Debts',financials:'Financials',licenses:'Licenses',
+    totalRevenue:'Total Revenue',netProfit:'Net Profit',totalExpenses:'Total Expenses',outstandingDebts:'Outstanding Debts',
+    recentSales:'Recent Sales',export:'Export CSV',reset:'Reset System',
+    addItem:'Add Product',itemName:'Product Name',category:'Category',
+    buyPrice:'Buy Price',sellPrice:'Sell Price',save:'Save Product',
+    recordSale:'Process Sale',quantity:'Quantity',customer:'Customer Name',
+    markPaid:'Mark Settled',pending:'Credit / Debt Sale',
+    capitalTitle:'Capital Overview',capital:'Invested Capital',runningCost:'Operating Expenses',
+    roi:'Return on Investment',updateCapital:'Update',totalDue:'Total Due',
+    salesTrend:'Sales Trend — Last 7 Days',categoryDist:'Revenue by Category',
+    licenseType:'License Type',licenseCost:'Cost (TZS)',
+    paymentDate:'Payment Date',nextDue:'Next Due Date',
+    addLicense:'Record License Payment',paid:'ACTIVE',overdue:'OVERDUE',dueSoon:'DUE SOON',
+    search:'Search products…',balance:'Capital Balance',margin:'Margin',
+    profitPerUnit:'Profit/Unit',debtMgmt:'Debt Management',
+    noDebts:'No outstanding debts — all clear',noSales:'No sales recorded yet',
+    noInventory:'Inventory is empty',grossProfit:'Gross Profit',
+    appearance:'Appearance',displayMode:'Display Mode',light:'Light',dark:'Dark',
+    accentColor:'Accent Color',themePresets:'Theme Presets',customAccent:'Custom Accent',
+    suppliers:'Suppliers',suppliersTab:'Payables & Suppliers',addSupplier:'Add Supplier',
+    supplierName:'Supplier Name',supplierContact:'Phone / Contact',
+    purchaseOrders:'Purchase Orders',addOrder:'Record Purchase',
+    poItem:'Item / Description',poSupplier:'Supplier',poQty:'Qty',poUnit:'Unit Cost',
+    poTotal:'Total Cost',poDate:'Date',poPaid:'Mark Paid',poUnpaid:'Unpaid',
+    totalPayable:'Total Payable',paidOrders:'Paid Orders',unpaidOrders:'Unpaid',
+    noSuppliers:'No suppliers added yet',noOrders:'No purchase orders yet',
+    howToUse:'How to Use',
+  },
+  sw:{
+    dashboard:'Dashibodi',analytics:'Takwimu',salesInv:'Mauzo na Bidhaa',expenses:'Matumizi',
+    debts:'Madeni',financials:'Mtaji',licenses:'Leseni',
+    totalRevenue:'Mapato Yote',netProfit:'Faida Halisi',totalExpenses:'Matumizi Yote',outstandingDebts:'Madeni',
+    recentSales:'Mauzo Mapya',export:'Pakua CSV',reset:'Futa Data',
+    addItem:'Ongeza Bidhaa',itemName:'Jina la Bidhaa',category:'Kundi',
+    buyPrice:'Bei ya Kununua',sellPrice:'Bei ya Kuuza',save:'Hifadhi',
+    recordSale:'Rekodi Mauzo',quantity:'Idadi',customer:'Jina la Mteja',
+    markPaid:'Amekwisha Lipa',pending:'Mkopo / Deni',
+    capitalTitle:'Muhtasari wa Mtaji',capital:'Mtaji Uliowekezwa',runningCost:'Gharama za Uendeshaji',
+    roi:'Kurudi kwa Mtaji',updateCapital:'Sasisha',totalDue:'Jumla ya Kulipa',
+    salesTrend:'Mwenendo wa Mauzo (Siku 7)',categoryDist:'Mapato kwa Kundi',
+    licenseType:'Aina ya Leseni',licenseCost:'Gharama',
+    paymentDate:'Tarehe ya Malipo',nextDue:'Tarehe ya Kuisha',
+    addLicense:'Rekodi Malipo ya Leseni',paid:'IMELIPWA',overdue:'IMEISHA MUDA',dueSoon:'INAISHA KARIBUNI',
+    search:'Tafuta bidhaa…',balance:'Salio la Mtaji',margin:'Faida %',
+    profitPerUnit:'Faida/Kipande',debtMgmt:'Madeni',
+    noDebts:'Hakuna madeni — sawa kabisa',noSales:'Hakuna mauzo bado',
+    noInventory:'Bidhaa hazipo',grossProfit:'Faida Jumla',
+    appearance:'Muonekano',displayMode:'Hali ya Onyesho',light:'Mwanga',dark:'Giza',
+    accentColor:'Rangi ya Mada',themePresets:'Mada Zilizowekwa',customAccent:'Rangi Maalum',
+    suppliers:'Wasambazaji',suppliersTab:'Malipo ya Wasambazaji',addSupplier:'Ongeza Msambazaji',
+    supplierName:'Jina la Msambazaji',supplierContact:'Simu / Mawasiliano',
+    purchaseOrders:'Manunuzi',addOrder:'Rekodi Ununuzi',
+    poItem:'Bidhaa / Maelezo',poSupplier:'Msambazaji',poQty:'Idadi',poUnit:'Bei ya Kununua',
+    poTotal:'Jumla',poDate:'Tarehe',poPaid:'Lipa',poUnpaid:'Haijalipiwa',
+    totalPayable:'Jumla ya Deni',paidOrders:'Imelipwa',unpaidOrders:'Haijalipiwa',
+    noSuppliers:'Hakuna wasambazaji bado',noOrders:'Hakuna manunuzi bado',
+    howToUse:'Jinsi ya Kutumia',
+  }
+};
 
-        const LICENSE_TYPES = [
-            { id: 'brela', name: 'BRELA (Annual Return)', interval: 12, label: 'Annual' },
-            { id: 'tra_clearance', name: 'TRA (Tax Clearance)', interval: 12, label: 'Annual' },
-            { id: 'tra_quarterly', name: 'TRA (Quarterly Tax)', interval: 3, label: 'Quarterly' },
-            { id: 'business_license', name: 'Municipal Business License', interval: 12, label: 'Annual' },
-            { id: 'mpesa', name: 'M-Pesa Agent License', interval: 12, label: 'Annual' },
-            { id: 'fire', name: 'Fire & Rescue Force', interval: 12, label: 'Annual' },
-            { id: 'osha', name: 'OSHA Compliance', interval: 12, label: 'Annual' },
-        ];
+/* ── Theme presets ── */
+const PRESETS = [
+  { key:'amber',  name:'Classic Amber',   desc:'Warm bookstore gold',   amber:'#c4862b',gold:'#d4a843',goldLight:'#f0c96a',bark:'#2d1e0f',mahogany:'#3d2b1a',sage:'#4a7c59',rose:'#c0392b' },
+  { key:'forest', name:'Forest Green',    desc:'Natural & refreshing',  amber:'#2d7a4a',gold:'#3a9960',goldLight:'#6ee7b7',bark:'#0d2b1a',mahogany:'#143826',sage:'#1a6b3a',rose:'#c0392b' },
+  { key:'ocean',  name:'Ocean Blue',      desc:'Cool & professional',   amber:'#1a6fa3',gold:'#2486c4',goldLight:'#7dd3f8',bark:'#0d1e2d',mahogany:'#142536',sage:'#1a5f7a',rose:'#c0392b' },
+  { key:'rose',   name:'Rose Gold',       desc:'Elegant & modern',      amber:'#a83255',gold:'#c44070',goldLight:'#f9a8c9',bark:'#2d0d18',mahogany:'#3d1424',sage:'#7a4a6b',rose:'#e05080' },
+  { key:'slate',  name:'Slate',           desc:'Minimal & neutral',     amber:'#4a5568',gold:'#606e84',goldLight:'#a0aec0',bark:'#1a1e2a',mahogany:'#242836',sage:'#3a5568',rose:'#c0392b' },
+  { key:'purple', name:'Royal Purple',    desc:'Bold & distinctive',    amber:'#6d3aaa',gold:'#8b55cc',goldLight:'#c4a0ee',bark:'#1a0e2d',mahogany:'#241438',sage:'#4a3a7a',rose:'#c0392b' },
+];
 
-        const TRANSLATIONS = {
-            en: {
-                dashboard: "Dashboard", analytics: "Analytics & Graphs", sales: "New Sale", expenses: "Expenses", config: "Inventory", debts: "Debts", financials: "Financials", licenses: "Licenses & Certs",
-                totalRevenue: "Revenue", netProfit: "Net Profit", totalExpenses: "Expenses", outstandingDebts: "Active Debts",
-                recentSales: "Recent Activity", export: "Export Report", reset: "Reset System", addItem: "Add to Inventory", itemName: "Item Description",
-                category: "Category", buyPrice: "Buying Price", sellPrice: "Selling Price", profit: "Profit", margin: "Margin",
-                save: "Save Item", recordSale: "Process Sale", suggestion: "Suggested Price", lowMargin: "Low Margin",
-                quantity: "Qty", customer: "Customer", markPaid: "Settle Debt", pending: "Credit Sale",
-                cat_textbook: "Textbook", cat_religious: "Religious", cat_novel: "Novel", cat_stationery: "Stationery",
-                cat_soap: "Liquid Soap", cat_flour: "Unga Lishe",
-                capitalTitle: "Capital & Evaluation", capital: "Invested Capital", runningCost: "Running Cost (OpEx)", roi: "Capital Recovery",
-                updateCapital: "Update Capital", totalDue: "TOTAL DUE", balance: "Balance Status",
-                salesTrend: "Sales Trend (Last 7 Days)", categoryDist: "Income by Category",
-                licenseTitle: "Regulatory Compliance", licenseType: "License Type", licenseCost: "Cost (TZS)", paymentDate: "Payment Date", nextDue: "Next Due",
-                addLicense: "Record License Payment", paid: "PAID", overdue: "OVERDUE", dueSoon: "DUE SOON"
-            },
-            sw: {
-                dashboard: "Dashibodi", analytics: "Takwimu na Grafu", sales: "Mauzo", expenses: "Matumizi", config: "Bidhaa", debts: "Madeni", financials: "Mtaji na Tathmini", licenses: "Leseni na Vyeti",
-                totalRevenue: "Mapato", netProfit: "Faida Halisi", totalExpenses: "Matumizi", outstandingDebts: "Madeni",
-                recentSales: "Mauzo Mapya", export: "Pakua Ripoti", reset: "Futa Data Zote", addItem: "Weka Bidhaa", itemName: "Jina la Bidhaa",
-                category: "Kundi", buyPrice: "Bei ya Kununua", sellPrice: "Bei ya Kuuza", profit: "Faida", margin: "Faida %",
-                save: "Hifadhi", recordSale: "Rekodi Mauzo", suggestion: "Pendekezo", lowMargin: "Faida Ndogo",
-                quantity: "Idadi", customer: "Mteja", markPaid: "Lipwa", pending: "Deni",
-                cat_textbook: "Vitabu (Masomo)", cat_religious: "Dini (Biblia)", cat_novel: "Riwaya", cat_stationery: "Vifaa (Kalamu)",
-                cat_soap: "Sabuni ya Maji", cat_flour: "Unga Lishe",
-                capitalTitle: "Mtaji na Tathmini", capital: "Mtaji Uliowekezwa", runningCost: "Gharama za Uendeshaji", roi: "Kurudi kwa Mtaji",
-                updateCapital: "Sasisha Mtaji", totalDue: "JUMLA YA KULIPA", balance: "Hali ya Salio",
-                salesTrend: "Mwenendo wa Mauzo (Siku 7)", categoryDist: "Mapato kwa Kundi",
-                licenseTitle: "Usimamizi wa Leseni (TRA/BRELA)", licenseType: "Aina ya Leseni", licenseCost: "Gharama", paymentDate: "Tarehe ya Malipo", nextDue: "Tarehe ya Kuisha",
-                addLicense: "Rekodi Malipo ya Leseni", paid: "IMELIPWA", overdue: "IMEISHA MUDA", dueSoon: "INAISHA KARIBUNI"
-            }
-        };
+/* ── Toast ── */
+let _toast = null;
+function ToastRoot() {
+  const [items, setItems] = useState([]);
+  _toast = useCallback((msg,type='info')=>{
+    const id=Date.now();
+    setItems(p=>[...p,{id,msg,type}]);
+    setTimeout(()=>setItems(p=>p.filter(t=>t.id!==id)),3500);
+  },[]);
+  const icons={success:<Ico.Check s={14} c="var(--sage)"/>,error:<Ico.X s={14} c="var(--rose)"/>,info:<Ico.Info s={14} c="var(--amber)"/>};
+  return <div style={{position:'fixed',top:20,right:20,zIndex:9999,display:'flex',flexDirection:'column',gap:10}}>
+    {items.map(t=><div key={t.id} className={`toast ${t.type}`}><span>{icons[t.type]}</span><span>{t.msg}</span></div>)}
+  </div>;
+}
+const toast=(msg,type)=>_toast&&_toast(msg,type);
 
-        const INITIAL_CATEGORIES = ['cat_textbook', 'cat_religious', 'cat_novel', 'cat_stationery', 'cat_soap', 'cat_flour'];
+/* ── Chart wrapper ── */
+function ChartWrap({type,data,options}){
+  const ref=useRef(null),inst=useRef(null);
+  useEffect(()=>{
+    if(!ref.current)return;
+    inst.current?.destroy();
+    inst.current=new window.Chart(ref.current.getContext('2d'),{type,data,options});
+    return()=>inst.current?.destroy();
+  },[data]);
+  return <canvas ref={ref}/>;
+}
 
-        // --- CHART COMPONENT ---
-        const ChartComponent = ({ type, data, options }) => {
-            const chartRef = useRef(null);
-            const canvasRef = useRef(null);
+/* ── Metric card ── */
+function MCard({title,value,sub,color,iconEl}){
+  return <div className={`metric-card ${color}`}>
+    <div className="metric-icon">{iconEl}</div>
+    <div className="metric-label">{title}</div>
+    <div className="metric-value">{value}</div>
+    {sub&&<div className="metric-sub">{sub}</div>}
+  </div>;
+}
 
-            useEffect(() => {
-                const ctx = canvasRef.current.getContext('2d');
-                if (chartRef.current) {
-                    chartRef.current.destroy();
-                }
-                chartRef.current = new Chart(ctx, { type, data, options });
-                return () => { if (chartRef.current) chartRef.current.destroy(); };
-            }, [data, type, options]);
+/* ══════════════════════════════════
+   THEME PANEL COMPONENT
+══════════════════════════════════ */
+function ThemePanel({open,onClose,dark,setDark,accentKey,setAccentKey,customColor,setCustomColor,t}){
+  const applyPreset = key => {
+    setAccentKey(key);
+    setCustomColor('');
+  };
+  return <>
+    <div className={`theme-overlay${open?' open':''}`} onClick={onClose}/>
+    <div className={`theme-panel${open?' open':''}`}>
+      <div className="theme-panel-head">
+        <div style={{display:'flex',alignItems:'center',gap:9}}>
+          <Ico.Palette s={16} c="var(--amber)"/>
+          <span style={{fontFamily:'Playfair Display,serif',fontSize:17,fontWeight:700,color:'var(--ink)'}}>{t.appearance}</span>
+        </div>
+        <button onClick={onClose} className="ico-btn" style={{width:28,height:28,borderRadius:'var(--r-sm)'}}>
+          <Ico.X s={14}/>
+        </button>
+      </div>
 
-            return <canvas ref={canvasRef} />;
-        };
+      <div className="theme-panel-body">
 
-        const CategoryIcon = ({ type }) => {
-            const IconComponent = CategoryIcons[type];
-            return IconComponent ? <IconComponent /> : <span className="text-gray-400">?</span>;
-        };
+        {/* Display mode */}
+        <div>
+          <div className="tp-section-label">{t.displayMode}</div>
+          <div className="mode-row">
+            <button className={`mode-btn${!dark?' mode-active':''}`} onClick={()=>setDark(false)}>
+              {/* light preview */}
+              <div className="mode-preview" style={{background:'#f7efe0'}}>
+                <div style={{position:'absolute',top:0,left:0,bottom:0,width:'35%',background:'#2d1e0f'}}/>
+                <div style={{position:'absolute',top:6,left:'40%',right:6,height:4,borderRadius:2,background:'#c4862b',opacity:.7}}/>
+                <div style={{position:'absolute',top:14,left:'40%',right:6,height:3,borderRadius:2,background:'#ede3cf'}}/>
+                <div style={{position:'absolute',top:21,left:'40%',right:6,height:3,borderRadius:2,background:'#ede3cf'}}/>
+              </div>
+              <span style={{fontSize:12,fontWeight:700}}>{t.light}</span>
+            </button>
+            <button className={`mode-btn${dark?' mode-active':''}`} onClick={()=>setDark(true)}>
+              {/* dark preview */}
+              <div className="mode-preview" style={{background:'#160f08'}}>
+                <div style={{position:'absolute',top:0,left:0,bottom:0,width:'35%',background:'#100c08'}}/>
+                <div style={{position:'absolute',top:6,left:'40%',right:6,height:4,borderRadius:2,background:'#c4862b',opacity:.8}}/>
+                <div style={{position:'absolute',top:14,left:'40%',right:6,height:3,borderRadius:2,background:'#241a10'}}/>
+                <div style={{position:'absolute',top:21,left:'40%',right:6,height:3,borderRadius:2,background:'#241a10'}}/>
+              </div>
+              <span style={{fontSize:12,fontWeight:700}}>{t.dark}</span>
+            </button>
+          </div>
+        </div>
 
-        function App() {
-            const [lang, setLang] = useState('en');
-            const [activeTab, setActiveTab] = useState('config');
-            
-            const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('ingu_inventory')) || []);
-            const [sales, setSales] = useState(() => JSON.parse(localStorage.getItem('ingu_sales')) || []);
-            const [expenses, setExpenses] = useState(() => JSON.parse(localStorage.getItem('ingu_expenses')) || []);
-            const [businessInfo, setBusinessInfo] = useState(() => JSON.parse(localStorage.getItem('ingu_business')) || { capital: 0 });
-            const [licenses, setLicenses] = useState(() => JSON.parse(localStorage.getItem('ingu_licenses')) || []);
+        {/* Accent swatches */}
+        <div>
+          <div className="tp-section-label">{t.accentColor}</div>
+          <div className="swatch-row">
+            {PRESETS.map(p=>(
+              <button key={p.key} title={p.name}
+                className={`swatch${accentKey===p.key&&!customColor?' swatch-active':''}`}
+                style={{background:`linear-gradient(135deg,${p.bark},${p.amber})`}}
+                onClick={()=>applyPreset(p.key)}>
+                {accentKey===p.key&&!customColor&&<Ico.Check s={12} c="#fff"/>}
+              </button>
+            ))}
+          </div>
+          {accentKey&&!customColor&&(
+            <div style={{marginTop:9,fontSize:11,color:'var(--tx-3)'}}>
+              Selected: <strong style={{color:'var(--amber)'}}>{PRESETS.find(p=>p.key===accentKey)?.name}</strong>
+            </div>
+          )}
+        </div>
 
-            // Forms
-            const [newItem, setNewItem] = useState({ name: '', category: 'cat_textbook', buyPrice: '', sellPrice: '' });
-            const [saleForm, setSaleForm] = useState({ itemId: '', qty: 1, volume: '', weight: '', customer: '', isDebt: false });
-            const [expenseForm, setExpenseForm] = useState({ name: '', cost: '' });
-            const [licenseForm, setLicenseForm] = useState({ type: 'brela', cost: '', date: '' });
-            const [capitalInput, setCapitalInput] = useState('');
+        {/* Custom color picker */}
+        <div>
+          <div className="tp-section-label">{t.customAccent}</div>
+          <div className="custom-color-row">
+            <div className="color-picker-wrap" style={{background:customColor||'var(--amber)'}}>
+              <input type="color" value={customColor||'#c4862b'}
+                onChange={e=>{setCustomColor(e.target.value);setAccentKey('custom');}}/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:600,color:'var(--ink)',marginBottom:3}}>
+                {customColor ? customColor.toUpperCase() : 'Click to pick a custom color'}
+              </div>
+              <div style={{fontSize:10,color:'var(--tx-3)'}}>Applies your own brand color as the accent</div>
+            </div>
+            {customColor&&(
+              <button className="btn btn-ghost btn-sm" onClick={()=>{setCustomColor('');setAccentKey('amber');}}>
+                <Ico.X s={11}/>
+              </button>
+            )}
+          </div>
+        </div>
 
-            // Persistence
-            useEffect(() => { localStorage.setItem('ingu_inventory', JSON.stringify(inventory)); }, [inventory]);
-            useEffect(() => { localStorage.setItem('ingu_sales', JSON.stringify(sales)); }, [sales]);
-            useEffect(() => { localStorage.setItem('ingu_expenses', JSON.stringify(expenses)); }, [expenses]);
-            useEffect(() => { localStorage.setItem('ingu_business', JSON.stringify(businessInfo)); }, [businessInfo]);
-            useEffect(() => { localStorage.setItem('ingu_licenses', JSON.stringify(licenses)); }, [licenses]);
-
-            const t = TRANSLATIONS[lang];
-
-            // Calculations
-            const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
-            const totalDebt = sales.filter(s => s.isDebt).reduce((acc, s) => acc + s.total, 0);
-            const totalExpensesVal = expenses.reduce((acc, e) => acc + e.cost, 0);
-            const totalCOGS = sales.reduce((acc, sale) => {
-                const item = inventory.find(i => i.id == sale.itemId);
-                return acc + (item ? (item.buyPrice * sale.unitsSold) : 0);
-            }, 0);
-            const netProfit = totalRevenue - totalCOGS - totalExpensesVal;
-
-            // --- ANALYTICS DATA PREP ---
-            const getLast7DaysSales = () => {
-                const days = {};
-                for(let i=6; i>=0; i--) {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    days[d.toISOString().split('T')[0]] = 0;
-                }
-                sales.forEach(s => {
-                    const date = s.date.split('T')[0];
-                    if (days.hasOwnProperty(date)) days[date] += s.total;
-                });
-                return days;
-            };
-
-            const getSalesByCategory = () => {
-                const cats = {};
-                sales.forEach(s => {
-                    cats[s.category] = (cats[s.category] || 0) + s.total;
-                });
-                return cats;
-            };
-
-            const salesTrendData = {
-                labels: Object.keys(getLast7DaysSales()),
-                datasets: [{
-                    label: 'Revenue',
-                    data: Object.values(getLast7DaysSales()),
-                    borderColor: '#4f46e5',
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                }]
-            };
-
-            const categoryData = {
-                labels: Object.keys(getSalesByCategory()).map(k => t[k] || k),
-                datasets: [{
-                    data: Object.values(getSalesByCategory()),
-                    backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#06b6d4', '#b45309'],
-                    borderWidth: 0
-                }]
-            };
-
-            const currentSaleItem = inventory.find(i => i.id == saleForm.itemId);
-            const currentSaleTotal = currentSaleItem ? currentSaleItem.sellPrice * saleForm.qty : 0;
-
-            // --- HANDLERS ---
-            const handleAddItem = () => {
-                if (!newItem.name.trim()) return alert("Error: Please enter an Item Name."); 
-                if (!newItem.buyPrice || parseFloat(newItem.buyPrice) <= 0) return alert("Error: Invalid Buying Price.");
-                const item = { id: Date.now(), ...newItem, buyPrice: parseFloat(newItem.buyPrice), sellPrice: parseFloat(newItem.sellPrice) };
-                setInventory([...inventory, item]);
-                setNewItem({ name: '', category: 'cat_textbook', buyPrice: '', sellPrice: '' });
-                alert("Item Saved!");
-            };
-
-            const handleRecordSale = () => {
-                const item = inventory.find(i => i.id == saleForm.itemId);
-                if (!item) return;
-                const newSale = {
-                    id: Date.now(),
-                    date: new Date().toISOString(),
-                    itemId: item.id,
-                    itemName: item.name,
-                    category: item.category,
-                    quantity: saleForm.qty,
-                    total: item.sellPrice * saleForm.qty,
-                    customer: saleForm.customer || 'Guest',
-                    isDebt: saleForm.isDebt,
-                    unitsSold: saleForm.qty 
-                };
-                setSales([newSale, ...sales]);
-                setSaleForm({ itemId: '', qty: 1, volume: '', weight: '', customer: '', isDebt: false });
-                alert("Sale Recorded!");
-            };
-
-            const handleAddLicense = () => {
-                if (!licenseForm.cost || !licenseForm.date) return alert("Please fill all fields");
-                const typeInfo = LICENSE_TYPES.find(t => t.id === licenseForm.type);
-                
-                // Calculate next date
-                const paymentDate = new Date(licenseForm.date);
-                const nextDate = new Date(paymentDate);
-                nextDate.setMonth(paymentDate.getMonth() + typeInfo.interval);
-
-                const newLic = { 
-                    id: Date.now(), 
-                    ...licenseForm, 
-                    cost: parseFloat(licenseForm.cost),
-                    name: typeInfo.name, 
-                    nextDue: nextDate.toISOString().split('T')[0]
-                };
-                setLicenses([...licenses, newLic]);
-                setLicenseForm({ type: 'brela', cost: '', date: '' });
-            };
-
-            const toggleDebt = (id) => {
-                setSales(sales.map(s => s.id === id ? { ...s, isDebt: !s.isDebt } : s));
-            };
-
-            const handleAddExpense = () => {
-                if(!expenseForm.name || !expenseForm.cost) return alert("Enter expense details");
-                setExpenses([...expenses, {id: Date.now(), name: expenseForm.name, cost: parseFloat(expenseForm.cost)}]); 
-                setExpenseForm({name:'', cost:''});
-            };
-
-            const updateCapital = () => {
-                if(!capitalInput || parseFloat(capitalInput) < 0) return;
-                setBusinessInfo({...businessInfo, capital: parseFloat(capitalInput)});
-                setCapitalInput('');
-            };
-
-            const exportData = () => {
-                const headers = ["Date", "Item", "Category", "Qty", "Total", "Is Debt", "Customer"];
-                const rows = sales.map(s => [s.date.split('T')[0], s.itemName, s.category, s.quantity, s.total, s.isDebt ? "YES":"NO", s.customer]);
-                let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
-                const link = document.createElement("a");
-                link.setAttribute("href", encodeURI(csvContent));
-                link.setAttribute("download", "ingu_report.csv");
-                document.body.appendChild(link);
-                link.click();
-            };
-
-            const resetSystem = () => {
-                if (window.confirm("WARNING: RESET SYSTEM?\n\nThis will delete ALL data.")) {
-                    setInventory([]); setSales([]); setExpenses([]); setBusinessInfo({capital: 0}); setLicenses([]);
-                    localStorage.clear();
-                    alert("System Reset.");
-                }
-            };
-
-            const formatMoney = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(n);
-
-            const getLicenseStatus = (nextDueDate) => {
-                const today = new Date();
-                const due = new Date(nextDueDate);
-                const diffTime = due - today;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                if (diffDays < 0) return { label: t.overdue, color: 'bg-red-100 text-red-700' };
-                if (diffDays < 30) return { label: t.dueSoon, color: 'bg-orange-100 text-orange-700' };
-                return { label: t.paid, color: 'bg-green-100 text-green-700' };
-            };
-
-            return (
-                <div className="flex flex-col md:flex-row w-full h-full bg-slate-100 overflow-hidden">
-                    
-                    {/* SIDEBAR RESPONSIVE */}
-                    <aside className="md:w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 shrink-0">
-                        <div className="p-4 md:p-6 border-b border-slate-700 flex justify-between items-center md:block">
-                            <div>
-                                <h1 className="text-xl md:text-2xl font-bold tracking-widest text-white">INGU</h1>
-                                <p className="text-xs text-slate-400 uppercase tracking-widest hidden md:block">Analytics</p>
-                            </div>
-                            <span className="md:hidden font-bold text-lg bg-indigo-600 px-2 rounded">IA</span>
-                        </div>
-
-                        {/* Navigation - Horizontal scroll on mobile, Vertical on desktop */}
-                        <nav className="flex-1 p-2 md:p-4 space-x-2 md:space-x-0 md:space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible no-scrollbar">
-                            {[
-                                { id: 'dashboard', icon: Icons.Dashboard, label: t.dashboard },
-                                { id: 'analytics', icon: Icons.Analytics, label: t.analytics },
-                                { id: 'sales', icon: Icons.Sale, label: t.sales },
-                                { id: 'financials', icon: Icons.Financial, label: t.financials },
-                                { id: 'licenses', icon: Icons.License, label: t.licenses },
-                                { id: 'config', icon: Icons.Config, label: t.config },
-                                { id: 'expenses', icon: Icons.Expense, label: t.expenses },
-                                { id: 'debts', icon: Icons.Debt, label: t.debts },
-                            ].map(menu => (
-                                <button key={menu.id} onClick={() => setActiveTab(menu.id)} 
-                                    className={`flex-shrink-0 flex items-center gap-2 md:gap-4 p-2 md:p-3 rounded-md transition-all duration-300 text-sm md:text-base ${activeTab === menu.id ? 'bg-indigo-600 text-white shadow-lg md:translate-x-1' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                                    {menu.icon()} 
-                                    <span className="hidden md:inline font-medium">{menu.label}</span>
-                                    <span className="md:hidden">{menu.label.substring(0, 3)}</span>
-                                </button>
-                            ))}
-                        </nav>
-
-                        <div className="hidden md:block p-4 border-t border-slate-700 space-y-2">
-                             <button onClick={exportData} className="w-full flex items-center gap-3 p-3 text-emerald-400 hover:bg-slate-800 rounded transition text-sm">
-                                {Icons.Download()} <span className="hidden md:inline">{t.export}</span>
-                            </button>
-                            <button onClick={resetSystem} className="w-full flex items-center gap-3 p-3 text-red-400 hover:bg-red-900/30 rounded transition text-sm">
-                                {Icons.Trash()} <span className="hidden md:inline">{t.reset}</span>
-                            </button>
-                        </div>
-                    </aside>
-
-                    {/* MAIN CONTENT */}
-                    <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-                        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 md:px-8 shadow-sm z-10 shrink-0">
-                            <h2 className="text-xl md:text-2xl font-bold text-slate-800 truncate">{t[activeTab]}</h2>
-                            <div className="flex gap-2">
-                                <button onClick={() => setLang(lang === 'en' ? 'sw' : 'en')} className="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 border border-slate-300 px-3 py-1 rounded-full transition">
-                                    {lang === 'en' ? 'SW' : 'EN'}
-                                </button>
-                                {/* Mobile Reset/Export in Header */}
-                                <div className="md:hidden flex gap-2">
-                                    <button onClick={exportData} className="text-emerald-600"><Icons.Download/></button>
-                                    <button onClick={resetSystem} className="text-red-600"><Icons.Trash/></button>
-                                </div>
-                            </div>
-                        </header>
-
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                            
-                            {/* DASHBOARD */}
-                            {activeTab === 'dashboard' && (
-                                <div className="space-y-8 fade-in">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                                        <StatCard title={t.totalRevenue} value={formatMoney(totalRevenue)} color="text-indigo-700" bg="bg-indigo-50" border="border-indigo-200" />
-                                        <StatCard title={t.netProfit} value={formatMoney(netProfit)} color="text-emerald-700" bg="bg-emerald-50" border="border-emerald-200" />
-                                        <StatCard title={t.totalExpenses} value={formatMoney(totalExpensesVal)} color="text-rose-700" bg="bg-rose-50" border="border-rose-200" />
-                                        <StatCard title={t.outstandingDebts} value={formatMoney(totalDebt)} color="text-amber-700" bg="bg-amber-50" border="border-amber-200" />
-                                    </div>
-                                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                                        <div className="p-5 border-b border-slate-100 bg-slate-50">
-                                            <h3 className="font-bold text-lg text-slate-700">{t.recentSales}</h3>
-                                        </div>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left min-w-[500px]">
-                                                <thead className="bg-white text-slate-500 border-b border-slate-200">
-                                                    <tr><th className="p-4 font-normal uppercase text-xs tracking-wider">Item</th><th className="p-4 font-normal uppercase text-xs tracking-wider">Date</th><th className="p-4 font-normal uppercase text-xs tracking-wider">Amount</th></tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {sales.slice(0, 8).map(s => (
-                                                        <tr key={s.id} className="hover:bg-slate-50 transition">
-                                                            <td className="p-4 font-medium text-slate-800 flex items-center gap-3">
-                                                                <div className="p-2 bg-slate-100 rounded-full"><CategoryIcon type={s.category} /></div>
-                                                                <div>{s.itemName} <span className="block text-xs text-slate-400">Qty: {s.quantity}</span></div>
-                                                            </td>
-                                                            <td className="p-4 text-slate-600">{s.date.split('T')[0]}</td>
-                                                            <td className="p-4 font-bold text-slate-900">{formatMoney(s.total)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ANALYTICS (GRAPHS) */}
-                            {activeTab === 'analytics' && (
-                                <div className="space-y-8 fade-in">
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200">
-                                            <h3 className="text-lg font-bold mb-4 text-slate-700">{t.salesTrend}</h3>
-                                            <div className="h-64">
-                                                <ChartComponent type="line" data={salesTrendData} options={{ responsive: true, maintainAspectRatio: false }} />
-                                            </div>
-                                        </div>
-                                        <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200">
-                                            <h3 className="text-lg font-bold mb-4 text-slate-700">{t.categoryDist}</h3>
-                                            <div className="h-64 flex justify-center">
-                                                <ChartComponent type="doughnut" data={categoryData} options={{ responsive: true, maintainAspectRatio: false }} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* LICENSES (NEW TAB) */}
-                            {activeTab === 'licenses' && (
-                                <div className="space-y-8 fade-in">
-                                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200 max-w-2xl mx-auto">
-                                        <h3 className="text-xl font-bold mb-4 text-slate-800 border-b pb-2">{t.addLicense}</h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t.licenseType}</label>
-                                                <select className="w-full p-3 border border-slate-300 rounded bg-slate-50" value={licenseForm.type} onChange={e => setLicenseForm({...licenseForm, type: e.target.value})}>
-                                                    {LICENSE_TYPES.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                                </select>
-                                                <p className="text-xs text-blue-500 mt-1 italic">
-                                                    * Reminder calculated based on {LICENSE_TYPES.find(l => l.id === licenseForm.type)?.label} renewal cycle.
-                                                </p>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <InputGroup label={t.licenseCost} type="number" value={licenseForm.cost} onChange={v => setLicenseForm({...licenseForm, cost: v})} />
-                                                <InputGroup label={t.paymentDate} type="date" value={licenseForm.date} onChange={v => setLicenseForm({...licenseForm, date: v})} />
-                                            </div>
-                                            <button onClick={handleAddLicense} className="w-full bg-slate-900 text-white py-3 font-bold rounded hover:bg-indigo-700 transition">Save Record</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {licenses.map(lic => {
-                                            const status = getLicenseStatus(lic.nextDue);
-                                            return (
-                                                <div key={lic.id} className="bg-white p-6 rounded-lg shadow border border-slate-200 relative overflow-hidden">
-                                                    <div className={`absolute top-0 right-0 px-3 py-1 text-xs font-bold ${status.color} rounded-bl-lg`}>{status.label}</div>
-                                                    <h4 className="font-bold text-lg text-slate-800 mb-1">{lic.name}</h4>
-                                                    <p className="text-sm text-slate-500 mb-4">{t.paymentDate}: {lic.date}</p>
-                                                    <div className="flex justify-between items-end border-t pt-4">
-                                                        <div>
-                                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t.nextDue}</p>
-                                                            <p className="font-bold text-indigo-600">{lic.nextDue}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t.licenseCost}</p>
-                                                            <p className="font-bold text-slate-800">{formatMoney(lic.cost)}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                        {licenses.length === 0 && (
-                                            <div className="col-span-full text-center p-8 text-slate-400 italic">No license payments recorded yet.</div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* SALES */}
-                            {activeTab === 'sales' && (
-                                <div className="max-w-2xl mx-auto fade-in">
-                                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200">
-                                        <h2 className="text-2xl md:text-3xl font-bold mb-6 text-slate-800 border-b pb-4">{t.sales}</h2>
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500">{t.itemName}</label>
-                                                <select className="w-full p-4 text-lg border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50" 
-                                                    onChange={e => setSaleForm({...saleForm, itemId: e.target.value})} value={saleForm.itemId}>
-                                                    <option value="">-- Select Item --</option>
-                                                    {inventory.map(i => <option key={i.id} value={i.id}>{i.name} — {formatMoney(i.sellPrice)}</option>)}
-                                                </select>
-                                            </div>
-
-                                            {saleForm.itemId && (
-                                                <div className="bg-slate-50 p-6 rounded border border-slate-200 space-y-5 fade-in">
-                                                    <div className="flex items-center gap-4 pb-4 border-b border-slate-200">
-                                                        <div className="p-3 bg-white rounded shadow-sm"><CategoryIcon type={inventory.find(i => i.id == saleForm.itemId)?.category} /></div>
-                                                        <div className="flex-1"><span className="block text-sm text-slate-500">Selected Item</span><span className="font-bold text-lg">{inventory.find(i => i.id == saleForm.itemId)?.name}</span></div>
-                                                    </div>
-                                                    <div className="grid grid-cols-3 gap-4">
-                                                        <div>
-                                                            <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t.quantity}</label>
-                                                            <input type="number" min="1" className="w-full p-3 border border-slate-300 rounded text-center font-bold" value={saleForm.qty} onChange={e => setSaleForm({...saleForm, qty: parseInt(e.target.value)})} />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t.customer}</label>
-                                                            <input type="text" className="w-full p-3 border border-slate-300 rounded" placeholder="Optional" onChange={e => setSaleForm({...saleForm, customer: e.target.value})} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="bg-indigo-900 text-white p-4 rounded text-center shadow-inner">
-                                                        <span className="block text-xs uppercase tracking-widest opacity-70 mb-1">{t.totalDue}</span>
-                                                        <span className="text-3xl font-bold">{formatMoney(currentSaleTotal)}</span>
-                                                    </div>
-                                                    <label className="flex items-center gap-3 p-3 border border-red-200 bg-red-50 rounded cursor-pointer hover:bg-red-100 transition">
-                                                        <input type="checkbox" className="w-5 h-5 accent-red-600" checked={saleForm.isDebt} onChange={e => setSaleForm({...saleForm, isDebt: e.target.checked})} />
-                                                        <span className="text-red-800 font-bold">{t.pending}</span>
-                                                    </label>
-                                                </div>
-                                            )}
-                                            <button onClick={handleRecordSale} disabled={!saleForm.itemId} className="w-full bg-slate-900 text-white py-4 text-lg font-bold uppercase tracking-widest hover:bg-indigo-700 transition disabled:bg-slate-300 disabled:cursor-not-allowed shadow-lg">{t.recordSale}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* FINANCIALS */}
-                            {activeTab === 'financials' && (
-                                <div className="space-y-8 fade-in">
-                                    <div className="bg-slate-900 text-white p-8 rounded-lg shadow-lg">
-                                        <h3 className="text-xl font-bold mb-2 uppercase tracking-widest opacity-80">{t.capitalTitle}</h3>
-                                        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mt-4">
-                                            <div><p className="text-sm opacity-60 mb-1">{t.capital}</p><h2 className="text-4xl font-bold">{formatMoney(businessInfo.capital)}</h2></div>
-                                            <div className="flex gap-2 w-full md:w-auto">
-                                                <input type="number" placeholder="Enter Amount" className="p-3 rounded text-slate-900 w-full md:w-48" value={capitalInput} onChange={e => setCapitalInput(e.target.value)} />
-                                                <button onClick={updateCapital} className="bg-indigo-600 px-6 py-3 rounded font-bold hover:bg-indigo-500">{t.updateCapital}</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                                            <h4 className="font-bold text-gray-500 text-sm uppercase tracking-wider mb-4">{t.runningCost}</h4>
-                                            <div className="text-3xl font-bold text-red-600 mb-2">{formatMoney(totalExpensesVal)}</div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4"><div className="bg-red-600 h-2.5 rounded-full" style={{width: `${Math.min((totalExpensesVal / (totalRevenue || 1)) * 100, 100)}%`}}></div></div>
-                                        </div>
-                                        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                                            <h4 className="font-bold text-gray-500 text-sm uppercase tracking-wider mb-4">{t.roi}</h4>
-                                            <div className="flex justify-between items-end mb-2">
-                                                <span className="text-3xl font-bold text-emerald-600">{businessInfo.capital > 0 ? ((netProfit / businessInfo.capital) * 100).toFixed(1) : 0}%</span>
-                                                <span className="text-sm text-gray-500">{t.balance}: {formatMoney(businessInfo.capital - netProfit)}</span>
-                                            </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4"><div className="bg-emerald-600 h-2.5 rounded-full" style={{width: `${Math.min((netProfit / (businessInfo.capital || 1)) * 100, 100)}%`}}></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* CONFIG */}
-                            {activeTab === 'config' && (
-                                <div className="space-y-8 fade-in">
-                                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200">
-                                        <h3 className="text-xl font-bold mb-6 text-slate-800 border-b pb-2">{t.addItem}</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                            <InputGroup label={t.itemName} value={newItem.name} onChange={v => setNewItem({...newItem, name: v})} />
-                                            <div className="space-y-1">
-                                                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500">{t.category}</label>
-                                                <select className="w-full p-3 border border-slate-300 rounded bg-white" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
-                                                    {INITIAL_CATEGORIES.map(c => <option key={c} value={c}>{t[c]}</option>)}
-                                                </select>
-                                            </div>
-                                            <InputGroup label={t.buyPrice} type="number" value={newItem.buyPrice} onChange={v => setNewItem({...newItem, buyPrice: v})} />
-                                            <InputGroup label={t.sellPrice} type="number" value={newItem.sellPrice} onChange={v => setNewItem({...newItem, sellPrice: v})} />
-                                        </div>
-                                        <button onClick={handleAddItem} className="mt-6 px-8 py-3 bg-indigo-600 text-white font-bold uppercase tracking-wider hover:bg-indigo-700 rounded shadow cursor-pointer">{t.save}</button>
-                                    </div>
-                                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left min-w-[600px]">
-                                                <thead className="bg-slate-50 border-b border-slate-200">
-                                                    <tr><th className="p-4 text-xs uppercase tracking-wider text-slate-500">{t.itemName}</th><th className="p-4 text-xs uppercase tracking-wider text-slate-500">{t.buyPrice}</th><th className="p-4 text-xs uppercase tracking-wider text-slate-500">{t.sellPrice}</th></tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {inventory.map(i => (
-                                                        <tr key={i.id} className="hover:bg-slate-50">
-                                                            <td className="p-4 font-medium flex items-center gap-3">
-                                                                <div className="p-2 bg-slate-100 rounded-full"><CategoryIcon type={i.category} /></div>
-                                                                <div>{i.name} <span className="block text-xs text-slate-400 font-normal">{t[i.category]}</span></div>
-                                                            </td>
-                                                            <td className="p-4 text-slate-500">{formatMoney(i.buyPrice)}</td>
-                                                            <td className="p-4 font-bold text-slate-800">{formatMoney(i.sellPrice)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* EXPENSES */}
-                            {activeTab === 'expenses' && (
-                                <div className="max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200 fade-in">
-                                    <h2 className="text-2xl font-bold mb-6 text-slate-800">{t.expenses}</h2>
-                                    <div className="flex flex-col md:flex-row gap-4 mb-8">
-                                        <input className="flex-1 p-3 border border-slate-300 rounded" placeholder="Description" value={expenseForm.name} onChange={e => setExpenseForm({...expenseForm, name: e.target.value})} />
-                                        <input type="number" className="w-full md:w-32 p-3 border border-slate-300 rounded" placeholder="Cost" value={expenseForm.cost} onChange={e => setExpenseForm({...expenseForm, cost: e.target.value})} />
-                                        <button onClick={handleAddExpense} className="bg-rose-600 text-white px-6 py-3 font-bold uppercase tracking-wider rounded hover:bg-rose-700">Add</button>
-                                    </div>
-                                    <ul className="divide-y divide-slate-100">
-                                        {expenses.map(e => (
-                                            <li key={e.id} className="py-4 flex justify-between items-center hover:bg-slate-50 px-2 rounded">
-                                                <span className="text-lg">{e.name}</span>
-                                                <span className="font-bold text-rose-600">{formatMoney(e.cost)}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {/* DEBTS */}
-                            {activeTab === 'debts' && (
-                                <div className="bg-white p-6 md:p-8 rounded-lg shadow-md border border-slate-200 fade-in">
-                                    <h2 className="text-2xl font-bold mb-6 text-slate-800 border-b pb-4">{t.debts} Management</h2>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left min-w-[600px]">
-                                            <thead className="bg-slate-50 text-slate-500">
-                                                <tr><th className="p-4 text-xs uppercase tracking-wider">{t.customer}</th><th className="p-4 text-xs uppercase tracking-wider">Details</th><th className="p-4 text-xs uppercase tracking-wider">Due</th><th className="p-4 text-xs uppercase tracking-wider">Action</th></tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {sales.filter(s => s.isDebt).map(s => (
-                                                    <tr key={s.id} className="hover:bg-slate-50">
-                                                        <td className="p-4 font-bold text-slate-800">{s.customer}</td>
-                                                        <td className="p-4 text-slate-600 flex items-center gap-2"><CategoryIcon type={s.category} />{s.itemName} ({s.quantity})</td>
-                                                        <td className="p-4 font-bold text-red-600">{formatMoney(s.total)}</td>
-                                                        <td className="p-4"><button onClick={() => toggleDebt(s.id)} className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-emerald-200">{t.markPaid}</button></td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </main>
+        {/* Presets list */}
+        <div>
+          <div className="tp-section-label">{t.themePresets}</div>
+          <div className="preset-list">
+            {PRESETS.map(p=>(
+              <button key={p.key} className={`preset-card${accentKey===p.key&&!customColor?' preset-active':''}`}
+                onClick={()=>applyPreset(p.key)}>
+                <div className="preset-dots">
+                  <div className="pdot" style={{background:p.bark}}/>
+                  <div className="pdot" style={{background:p.amber}}/>
+                  <div className="pdot" style={{background:p.goldLight}}/>
+                  <div className="pdot" style={{background:p.sage}}/>
                 </div>
-            );
-        }
+                <div className="preset-info">
+                  <strong>{p.name}</strong>
+                  <span>{p.desc}</span>
+                </div>
+                {accentKey===p.key&&!customColor&&<Ico.Check s={13} c="var(--amber)"/>}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        const StatCard = ({ title, value, color, bg, border }) => (
-            <div className={`p-6 rounded-lg border ${border} ${bg} shadow-sm transition hover:shadow-md`}>
-                <p className={`text-xs uppercase tracking-widest font-bold mb-2 opacity-70 ${color}`}>{title}</p>
-                <h3 className={`text-3xl font-bold ${color}`}>{value}</h3>
+      </div>
+    </div>
+  </>;
+}
+
+/* ══════════════════════════════════
+   MAIN APP
+══════════════════════════════════ */
+function App(){
+  const [lang,setLang]   = useState('en');
+  const [tab,setTab]     = useState('dashboard');
+  const [pOpen,setPOpen] = useState(false);
+  const [sideOpen,setSideOpen] = useState(false);
+  const t = T[lang];
+
+  /* ── Theme state ── */
+  const [dark,setDark]           = useState(()=>localStorage.getItem('ig_dark')==='1');
+  const [accentKey,setAccentKey] = useState(()=>localStorage.getItem('ig_accent')||'amber');
+  const [customColor,setCustomColor] = useState(()=>localStorage.getItem('ig_custom')||'');
+
+  /* Apply dark mode */
+  useEffect(()=>{
+    document.body.classList.toggle('dark',dark);
+    localStorage.setItem('ig_dark',dark?'1':'0');
+  },[dark]);
+
+  /* Apply accent / custom color */
+  useEffect(()=>{
+    const root=document.documentElement;
+    if(customColor){
+      // derive a simple palette from custom color
+      root.style.setProperty('--amber',customColor);
+      root.style.setProperty('--gold',customColor);
+      root.style.setProperty('--gold-light',customColor+'aa');
+      root.style.setProperty('--amber-2',customColor);
+      localStorage.setItem('ig_custom',customColor);
+    } else {
+      const p=PRESETS.find(x=>x.key===accentKey)||PRESETS[0];
+      root.style.setProperty('--amber',p.amber);
+      root.style.setProperty('--gold',p.gold);
+      root.style.setProperty('--gold-light',p.goldLight);
+      root.style.setProperty('--amber-2',p.amber);
+      root.style.setProperty('--bark',p.bark);
+      root.style.setProperty('--mahogany',p.mahogany);
+      root.style.setProperty('--sage',p.sage);
+      root.style.setProperty('--rose',p.rose);
+      localStorage.setItem('ig_accent',accentKey);
+      localStorage.setItem('ig_custom','');
+    }
+  },[accentKey,customColor]);
+
+  /* ── Data state ── */
+  const [inv,setInv]   = useState(()=>JSON.parse(localStorage.getItem('ig_inv')||'[]'));
+  const [sales,setSales]= useState(()=>JSON.parse(localStorage.getItem('ig_sales')||'[]'));
+  const [exp,setExp]   = useState(()=>JSON.parse(localStorage.getItem('ig_exp')||'[]'));
+  const [lic,setLic]   = useState(()=>JSON.parse(localStorage.getItem('ig_lic')||'[]'));
+  const [biz,setBiz]   = useState(()=>JSON.parse(localStorage.getItem('ig_biz')||'{"capital":0}'));
+  const [suppl,setSuppl]= useState(()=>JSON.parse(localStorage.getItem('ig_supl')||'[]'));
+  const [po,setPO]     = useState(()=>JSON.parse(localStorage.getItem('ig_po')||'[]'));
+
+  const [nItem,setNItem] = useState({name:'',category:'cat_textbook',buyPrice:'',sellPrice:''});
+  const [sForm,setSForm] = useState({itemId:'',qty:1,customer:'',isDebt:false});
+  const [eForm,setEForm] = useState({name:'',cost:''});
+  const [lForm,setLForm] = useState({type:'brela',cost:'',date:''});
+  const [capIn,setCapIn] = useState('');
+  const [srch,setSrch]   = useState('');
+  /* supplier state */
+  const [splForm,setSplForm] = useState({name:'',contact:'',notes:''});
+  const [poForm,setPoForm]   = useState({supplierId:'',item:'',category:'cat_textbook',qty:1,unitCost:'',date:new Date().toISOString().split('T')[0]});
+  const [selSuppl,setSelSuppl]= useState(null); // filter POs by supplier
+  const [howOpen,setHowOpen] = useState(true);  // how-to collapsed state
+
+  useEffect(()=>{localStorage.setItem('ig_inv',JSON.stringify(inv));},[inv]);
+  useEffect(()=>{localStorage.setItem('ig_sales',JSON.stringify(sales));},[sales]);
+  useEffect(()=>{localStorage.setItem('ig_exp',JSON.stringify(exp));},[exp]);
+  useEffect(()=>{localStorage.setItem('ig_lic',JSON.stringify(lic));},[lic]);
+  useEffect(()=>{localStorage.setItem('ig_biz',JSON.stringify(biz));},[biz]);
+  useEffect(()=>{localStorage.setItem('ig_supl',JSON.stringify(suppl));},[suppl]);
+  useEffect(()=>{localStorage.setItem('ig_po',JSON.stringify(po));},[po]);
+
+  const totalRev   = sales.reduce((a,s)=>a+s.total,0);
+  const totalDebt  = sales.filter(s=>s.isDebt).reduce((a,s)=>a+s.total,0);
+  const debtCt     = sales.filter(s=>s.isDebt).length;
+  const totalExp   = exp.reduce((a,e)=>a+e.cost,0);
+  const totalCOGS  = sales.reduce((a,s)=>{const i=inv.find(x=>x.id===s.itemId);return a+(i?i.buyPrice*s.unitsSold:0);},0);
+  const grossProfit= totalRev-totalCOGS;
+  const netProfit  = grossProfit-totalExp;
+
+  const fmt = n => new Intl.NumberFormat('en-TZ',{style:'currency',currency:'TZS',maximumFractionDigits:0}).format(n);
+
+  const last7=()=>{
+    const d={};for(let i=6;i>=0;i--){const x=new Date();x.setDate(x.getDate()-i);d[x.toISOString().split('T')[0]]=0;}
+    sales.forEach(s=>{const k=s.date.split('T')[0];if(k in d)d[k]+=s.total;});return d;
+  };
+  const catSales=()=>{const c={};sales.forEach(s=>{c[s.category]=(c[s.category]||0)+s.total;});return c;};
+
+  const chartBase={
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{family:'DM Sans',size:11},color:'var(--tx-2)'}}},
+    scales:{x:{grid:{color:'rgba(26,18,8,.05)'},ticks:{font:{family:'DM Sans',size:10},color:'var(--tx-3)'}},
+            y:{grid:{color:'rgba(26,18,8,.05)'},ticks:{font:{family:'DM Sans',size:10},color:'var(--tx-3)'}}}
+  };
+  const salesChartData={
+    labels:Object.keys(last7()).map(d=>new Date(d).toLocaleDateString('en',{weekday:'short',day:'numeric'})),
+    datasets:[{label:'Revenue',data:Object.values(last7()),borderColor:'var(--amber)',backgroundColor:'rgba(196,134,43,0.08)',tension:0.42,fill:true,pointBackgroundColor:'var(--amber)',pointRadius:4,borderWidth:2.5}]
+  };
+  const catData={
+    labels:Object.keys(catSales()).map(k=>(lang==='sw'?getCat(k).sw:getCat(k).label)),
+    datasets:[{data:Object.values(catSales()),backgroundColor:Object.keys(catSales()).map(k=>getCat(k).color),borderWidth:0,hoverOffset:6}]
+  };
+
+  const addItem=()=>{
+    if(!nItem.name.trim())return toast('Enter a product name.','error');
+    if(!nItem.buyPrice||+nItem.buyPrice<=0)return toast('Enter a valid buy price.','error');
+    if(!nItem.sellPrice||+nItem.sellPrice<=0)return toast('Enter a valid sell price.','error');
+    if(+nItem.sellPrice<+nItem.buyPrice)return toast('Sell price cannot be less than buy price!','error');
+    setInv([...inv,{id:Date.now(),...nItem,buyPrice:+nItem.buyPrice,sellPrice:+nItem.sellPrice}]);
+    setNItem({name:'',category:'cat_textbook',buyPrice:'',sellPrice:''});
+    toast('Product saved.','success');
+  };
+  const delItem=id=>{if(!window.confirm('Delete this product?'))return;setInv(inv.filter(i=>i.id!==id));toast('Product removed.','info');};
+  const recSale=()=>{
+    const item=inv.find(i=>i.id===+sForm.itemId);
+    if(!item)return toast('Select a product.','error');
+    if(!sForm.qty||sForm.qty<1)return toast('Enter a valid quantity.','error');
+    const s={id:Date.now(),date:new Date().toISOString(),itemId:item.id,itemName:item.name,category:item.category,quantity:sForm.qty,unitsSold:sForm.qty,total:item.sellPrice*sForm.qty,customer:sForm.customer||'Walk-in',isDebt:sForm.isDebt};
+    setSales([s,...sales]);setSForm({itemId:'',qty:1,customer:'',isDebt:false});
+    toast(sForm.isDebt?'Credit sale recorded.':'Sale recorded!',sForm.isDebt?'info':'success');
+  };
+  const addExp=()=>{
+    if(!eForm.name||!eForm.cost)return toast('Fill all fields.','error');
+    setExp([...exp,{id:Date.now(),name:eForm.name,cost:+eForm.cost,date:new Date().toISOString()}]);
+    setEForm({name:'',cost:''});toast('Expense recorded.','success');
+  };
+  const addLic=()=>{
+    if(!lForm.cost||!lForm.date)return toast('Fill all fields.','error');
+    const info=LICENSE_TYPES.find(l=>l.id===lForm.type);
+    const next=new Date(lForm.date);next.setMonth(next.getMonth()+info.interval);
+    setLic([...lic,{id:Date.now(),...lForm,cost:+lForm.cost,name:info.name,nextDue:next.toISOString().split('T')[0]}]);
+    setLForm({type:'brela',cost:'',date:''});toast('License recorded.','success');
+  };
+  const toggleDebt=id=>{setSales(sales.map(s=>s.id===id?{...s,isDebt:!s.isDebt}:s));toast('Debt updated.','success');};
+  const updateCap=()=>{if(!capIn||+capIn<0)return toast('Enter a valid amount.','error');setBiz({...biz,capital:+capIn});setCapIn('');toast('Capital updated.','success');};
+  const exportCSV=()=>{
+    const rows=[['Date','Item','Category','Qty','Total','Debt','Customer'],...sales.map(s=>[s.date.split('T')[0],s.itemName,s.category,s.quantity,s.total,s.isDebt?'YES':'NO',s.customer])];
+    const csv='data:text/csv;charset=utf-8,'+rows.map(r=>r.join(',')).join('\n');
+    const a=document.createElement('a');a.href=encodeURI(csv);a.download='ingu_report.csv';a.click();
+    toast('Report exported.','success');
+  };
+  const resetAll=()=>{
+    if(!window.confirm('RESET SYSTEM? All data will be permanently deleted.'))return;
+    setInv([]);setSales([]);setExp([]);setLic([]);setBiz({capital:0});setSuppl([]);setPO([]);localStorage.clear();
+    toast('System reset.','info');
+  };
+
+  /* ── Supplier / PO helpers ── */
+  const totalPayable   = po.filter(p=>!p.paid).reduce((a,p)=>a+p.totalCost,0);
+  const unpaidPOCt     = po.filter(p=>!p.paid).length;
+  const totalPOSpend   = po.reduce((a,p)=>a+p.totalCost,0);
+  const filtPO = selSuppl ? po.filter(p=>p.supplierId===selSuppl) : po;
+
+  const addSupplier=()=>{
+    if(!splForm.name.trim())return toast('Enter a supplier name.','error');
+    setSuppl([...suppl,{id:Date.now(),...splForm}]);
+    setSplForm({name:'',contact:'',notes:''});
+    toast('Supplier added.','success');
+  };
+  const delSupplier=id=>{
+    if(!window.confirm('Delete this supplier and all their orders?'))return;
+    setSuppl(suppl.filter(s=>s.id!==id));
+    setPO(po.filter(p=>p.supplierId!==id));
+    if(selSuppl===id)setSelSuppl(null);
+    toast('Supplier removed.','info');
+  };
+  const addPO=()=>{
+    if(!poForm.supplierId)return toast('Select a supplier.','error');
+    if(!poForm.item.trim())return toast('Enter item description.','error');
+    if(!poForm.unitCost||+poForm.unitCost<=0)return toast('Enter a valid unit cost.','error');
+    if(!poForm.qty||+poForm.qty<1)return toast('Enter a valid quantity.','error');
+    const sup=suppl.find(s=>s.id===+poForm.supplierId);
+    const total=+poForm.unitCost * +poForm.qty;
+    setPO([{id:Date.now(),supplierId:+poForm.supplierId,supplierName:sup?.name||'Unknown',
+      item:poForm.item,category:poForm.category,qty:+poForm.qty,
+      unitCost:+poForm.unitCost,totalCost:total,date:poForm.date,paid:false},...po]);
+    setPoForm({supplierId:poForm.supplierId,item:'',category:'cat_textbook',qty:1,unitCost:'',date:new Date().toISOString().split('T')[0]});
+    toast(`Purchase order recorded — ${fmt(total)} payable.`,'info');
+  };
+  const togglePO=id=>{setPO(po.map(p=>p.id===id?{...p,paid:!p.paid}:p));toast('Payment status updated.','success');};
+  const licSt=nextDue=>{
+    const diff=Math.ceil((new Date(nextDue)-new Date())/86400000);
+    if(diff<0)return{label:t.overdue,cls:'badge-red',color:'var(--rose)'};
+    if(diff<30)return{label:t.dueSoon,cls:'badge-amber',color:'var(--amber)'};
+    return{label:t.paid,cls:'badge-green',color:'var(--sage)'};
+  };
+
+  const saleItem  = inv.find(i=>i.id===+sForm.itemId);
+  const saleTotal = saleItem?saleItem.sellPrice*sForm.qty:0;
+  const filtInv   = inv.filter(i=>i.name.toLowerCase().includes(srch.toLowerCase()));
+
+  const NAVS=[
+    {group:'Overview',items:[
+      {id:'dashboard',label:t.dashboard,IcoC:Ico.Dashboard},
+      {id:'analytics',label:t.analytics,IcoC:Ico.Analytics},
+    ]},
+    {group:'Operations',items:[
+      {id:'sales',label:t.salesInv,IcoC:Ico.Sale,badge:null},
+      {id:'debts',label:t.debtMgmt,IcoC:Ico.Debt,badge:debtCt||null},
+      {id:'suppliers',label:t.suppliersTab,IcoC:Ico.Truck,badge:unpaidPOCt||null},
+    ]},
+    {group:'Management',items:[
+      {id:'expenses',label:t.expenses,IcoC:Ico.Expense},
+      {id:'financials',label:t.financials,IcoC:Ico.Financial},
+      {id:'licenses',label:t.licenses,IcoC:Ico.License},
+    ]},
+  ];
+  const TAB_LABELS={dashboard:t.dashboard,analytics:t.analytics,sales:t.salesInv,debts:t.debtMgmt,suppliers:t.suppliersTab,expenses:t.expenses,financials:t.financials,licenses:t.licenses};
+  const TAB_ICONS={dashboard:Ico.Dashboard,analytics:Ico.Analytics,sales:Ico.Sale,debts:Ico.Debt,suppliers:Ico.Truck,expenses:Ico.Expense,financials:Ico.Financial,licenses:Ico.License};
+  const TabIcon = TAB_ICONS[tab];
+
+  return <>
+    <ToastRoot/>
+    <ThemePanel open={pOpen} onClose={()=>setPOpen(false)}
+      dark={dark} setDark={setDark}
+      accentKey={accentKey} setAccentKey={setAccentKey}
+      customColor={customColor} setCustomColor={setCustomColor}
+      t={t}/>
+
+    {/* Mobile sidebar overlay */}
+    <div className={`sidebar-overlay${sideOpen?' show':''}`} onClick={()=>setSideOpen(false)}/>
+
+    <div className="layout">
+      {/* ═══ SIDEBAR ═══ */}
+      <aside className={`sidebar${sideOpen?' mobile-open':''}`}>
+        <div className="sidebar-header">
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+            <div style={{width:32,height:32,background:'linear-gradient(135deg,var(--amber),var(--gold))',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <Ico.Inventory s={16} c="var(--bark)"/>
             </div>
-        );
+            <div className="sidebar-logo">INGU</div>
+          </div>
+          <div className="sidebar-tagline">Store Analytics</div>
+        </div>
+        <nav className="sidebar-nav">
+          {NAVS.map(g=><div key={g.group}>
+            <div className="nav-group-label">{g.group}</div>
+            {g.items.map(item=><button key={item.id} className={`nav-btn${tab===item.id?' active':''}`} onClick={()=>{setTab(item.id);setSideOpen(false);}}>
+              <span className="nav-icon-wrap"><item.IcoC s={15}/></span>
+              <span>{item.label}</span>
+              {item.badge&&<span className="nav-badge">{item.badge}</span>}
+            </button>)}
+          </div>)}
+        </nav>
+        <div className="sidebar-footer">
+          <button className="btn btn-full btn-sm" style={{marginBottom:7,justifyContent:'flex-start',gap:8,background:'transparent',color:'rgba(253,246,236,.45)',border:'1px solid rgba(253,246,236,.1)'}} onClick={exportCSV}>
+            <Ico.Download s={14}/>{t.export}
+          </button>
+          <button className="btn btn-full btn-sm" style={{justifyContent:'flex-start',gap:8,background:'rgba(192,57,43,.15)',color:'#e08080',border:'1px solid rgba(192,57,43,.22)'}} onClick={resetAll}>
+            <Ico.Trash s={14}/>{t.reset}
+          </button>
+        </div>
+      </aside>
 
-        const InputGroup = ({ label, value, onChange, type="text" }) => (
-            <div className="space-y-1">
-                <label className="block text-xs uppercase tracking-wider font-bold text-slate-500">{label}</label>
-                <input type={type} className="w-full p-3 border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" value={value} onChange={e => onChange(e.target.value)} />
+      {/* ═══ MAIN ═══ */}
+      <main className="main">
+        <header className="topbar">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            {/* Hamburger — shown only on mobile via CSS */}
+            <button className="hamburger" onClick={()=>setSideOpen(o=>!o)} aria-label="Menu">
+              <span/><span/><span/>
+            </button>
+            {TabIcon&&<div style={{color:'var(--amber)'}}><TabIcon s={18}/></div>}
+            <div className="topbar-title">{TAB_LABELS[tab]}</div>
+          </div>
+
+          {/* ── Topbar controls ── */}
+          <div className="topbar-controls" style={{display:'flex',alignItems:'center',gap:8}}>
+            {/* Dark/light toggle */}
+            <button className="ico-btn" title={dark?t.light:t.dark} onClick={()=>setDark(d=>!d)}>
+              {dark ? <Ico.Sun s={15}/> : <Ico.Moon s={15}/>}
+            </button>
+            {/* Theme palette button */}
+            <button className={`ico-btn${pOpen?' active':''}`} title={t.appearance} onClick={()=>setPOpen(o=>!o)}>
+              <Ico.Palette s={15}/>
+            </button>
+            {/* Language */}
+            <button className="lang-toggle" onClick={()=>setLang(l=>l==='en'?'sw':'en')}>
+              <span style={{display:'flex',alignItems:'center',gap:5}}><Ico.Globe s={11}/>{lang==='en'?'SW':'EN'}</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="content">
+
+          {/* ═══ DASHBOARD ═══ */}
+          {tab==='dashboard'&&<div className="sec">
+            <div className="metrics-grid">
+              <MCard title={t.totalRevenue}   value={fmt(totalRev)}  sub={`${sales.length} transactions`} color="amber" iconEl={<Ico.Coins s={18} c="var(--amber)"/>}/>
+              <MCard title={t.netProfit}      value={fmt(netProfit)} sub={totalRev>0?`${((netProfit/totalRev)*100).toFixed(1)}% margin`:'—'} color="green" iconEl={<Ico.TrendUp s={18} c="var(--sage)"/>}/>
+              <MCard title={t.totalExpenses}  value={fmt(totalExp)}  sub={`${exp.length} entries`} color="red" iconEl={<Ico.TrendDown s={18} c="var(--rose)"/>}/>
+              <MCard title={t.outstandingDebts} value={fmt(totalDebt)} sub={`${debtCt} pending`} color="blue" iconEl={<Ico.AlertTriangle s={18} c="var(--sky)"/>}/>
             </div>
-        );
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title">{t.recentSales}</span>
+                <span style={{fontSize:12,color:'var(--tx-3)',display:'flex',alignItems:'center',gap:5}}><Ico.Chart s={13} c="var(--tx-3)"/>{sales.length} total</span>
+              </div>
+              {sales.length===0?<div className="empty-state"><div className="empty-state-icon"><Ico.ShoppingBag s={40} c="var(--tx-3)"/></div><p>{t.noSales}</p></div>:
+              <div className="table-wrap"><table>
+                <thead><tr><th>Product</th><th>Date</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody>{sales.slice(0,10).map(s=>{const cat=getCat(s.category);return<tr key={s.id}>
+                  <td><div style={{display:'flex',alignItems:'center',gap:9}}>
+                    <div className="cat-icon-wrap" style={{background:cat.bg,color:cat.color}}><cat.Icon s={15} c={cat.color}/></div>
+                    <div><div style={{fontWeight:600,fontSize:13}}>{s.itemName}</div><div style={{fontSize:11,color:'var(--tx-3)'}}>Qty:{s.quantity}</div></div>
+                  </div></td>
+                  <td style={{fontSize:12,color:'var(--tx-2)',fontFamily:'DM Mono,monospace'}}>{s.date.split('T')[0]}</td>
+                  <td style={{fontSize:12,color:'var(--tx-2)'}}>{s.customer}</td>
+                  <td style={{fontFamily:'DM Mono,monospace',fontWeight:600}}>{fmt(s.total)}</td>
+                  <td>{s.isDebt?<span className="badge badge-red"><Ico.AlertTriangle s={9}/>Debt</span>:<span className="badge badge-green"><Ico.Check s={9}/>Paid</span>}</td>
+                </tr>;})}</tbody>
+              </table></div>}
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:14}}>
+              {[
+                {label:'Cost of Goods',val:fmt(totalCOGS),pct:totalRev>0?((totalCOGS/totalRev)*100).toFixed(1):0,bar:'var(--umber)',note:'of revenue',icon:<Ico.CreditCard s={14} c="var(--umber)"/>},
+                {label:t.grossProfit,val:fmt(grossProfit),pct:totalRev>0?((grossProfit/totalRev)*100).toFixed(1):0,bar:'var(--sage)',note:'gross margin',icon:<Ico.TrendUp s={14} c="var(--sage)"/>},
+                {label:'Inventory Size',val:`${inv.length} products`,pct:null,bar:null,note:`${exp.length} expenses · ${lic.length} licenses`,icon:<Ico.Package s={14} c="var(--amber)"/>},
+              ].map((row,i)=><div key={i} className="card" style={{marginBottom:0}}>
+                <div className="card-body" style={{padding:16}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:7}}><span style={{opacity:.6}}>{row.icon}</span><div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--tx-3)',fontWeight:700}}>{row.label}</div></div>
+                  <div style={{fontFamily:'DM Mono,monospace',fontSize:18,fontWeight:500}}>{row.val}</div>
+                  {row.bar&&<><div style={{marginTop:10}}><div className="progress-track"><div className="progress-fill" style={{width:`${Math.min(+row.pct,100)}%`,background:row.bar}}/></div></div><div style={{fontSize:11,color:'var(--tx-3)',marginTop:4}}>{row.pct}% {row.note}</div></>}
+                  {!row.bar&&<div style={{fontSize:11,color:'var(--tx-3)',marginTop:8}}>{row.note}</div>}
+                </div>
+              </div>)}
+            </div>
+          </div>}
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+          {/* ═══ ANALYTICS ═══ */}
+          {tab==='analytics'&&<div className="sec">
+            <div className="charts-grid">
+              <div className="card" style={{marginBottom:0}}>
+                <div className="card-header"><span className="card-title" style={{display:'flex',alignItems:'center',gap:8}}><Ico.Analytics s={14} c="var(--amber)"/>{t.salesTrend}</span></div>
+                <div className="card-body"><div className="chart-wrap"><ChartWrap type="line" data={salesChartData} options={{...chartBase,plugins:{...chartBase.plugins,legend:{display:false}}}}/></div></div>
+              </div>
+              <div className="card" style={{marginBottom:0}}>
+                <div className="card-header"><span className="card-title" style={{display:'flex',alignItems:'center',gap:8}}><Ico.Chart s={14} c="var(--amber)"/>{t.categoryDist}</span></div>
+                <div className="card-body"><div className="chart-wrap"><ChartWrap type="doughnut" data={catData} options={{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:'DM Sans',size:11},color:'var(--tx-2)',padding:12}}}}}/></div></div>
+              </div>
+            </div>
+            <div className="card">
+              <div className="card-header"><span className="card-title">Category Breakdown</span></div>
+              <div className="table-wrap"><table>
+                <thead><tr><th>Category</th><th>Sales</th><th>Revenue</th><th>% Share</th></tr></thead>
+                <tbody>{CATS.map(cat=>{
+                  const rev=sales.filter(s=>s.category===cat.id).reduce((a,s)=>a+s.total,0);
+                  const cnt=sales.filter(s=>s.category===cat.id).length;
+                  if(!rev)return null;
+                  return<tr key={cat.id}>
+                    <td><div style={{display:'flex',alignItems:'center',gap:9}}><div className="cat-icon-wrap" style={{background:cat.bg,color:cat.color}}><cat.Icon s={15} c={cat.color}/></div><span style={{fontWeight:600}}>{lang==='sw'?cat.sw:cat.label}</span></div></td>
+                    <td style={{fontFamily:'DM Mono,monospace'}}>{cnt}</td>
+                    <td style={{fontFamily:'DM Mono,monospace',fontWeight:600}}>{fmt(rev)}</td>
+                    <td><div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <div style={{flex:1}}><div className="progress-track"><div className="progress-fill" style={{width:`${totalRev>0?((rev/totalRev)*100).toFixed(0):0}%`,background:cat.color}}/></div></div>
+                      <span style={{fontSize:12,color:'var(--tx-2)',minWidth:36,textAlign:'right'}}>{totalRev>0?((rev/totalRev)*100).toFixed(1):0}%</span>
+                    </div></td>
+                  </tr>;
+                })}</tbody>
+              </table></div>
+            </div>
+          </div>}
+
+          {/* ═══ SALES & INVENTORY ═══ */}
+          {tab==='sales'&&<div className="sec">
+            <div className="sales-split" style={{gridTemplateColumns:'minmax(300px,380px) 1fr'}}>
+              {/* LEFT: sale form */}
+              <div>
+                <div className="card" style={{marginBottom:14}}>
+                  <div className="card-header"><span className="card-title" style={{display:'flex',alignItems:'center',gap:8}}><Ico.Sale s={14} c="var(--amber)"/>{t.recordSale}</span></div>
+                  <div className="card-body">
+                    <div className="field" style={{marginBottom:15}}>
+                      <label>{t.itemName}</label>
+                      <select value={sForm.itemId} onChange={e=>setSForm({...sForm,itemId:e.target.value})}>
+                        <option value="">— Select a product —</option>
+                        {inv.map(i=>{const cat=getCat(i.category);return<option key={i.id} value={i.id}>{lang==='sw'?cat.sw:cat.label}: {i.name} — {fmt(i.sellPrice)}</option>;})}
+                      </select>
+                    </div>
+                    {saleItem&&<div style={{background:'var(--paper)',borderRadius:'var(--r)',padding:18,marginBottom:15,border:'1px solid var(--paper-2)',overflow:'hidden',minWidth:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14,paddingBottom:14,borderBottom:'1px solid var(--paper-2)'}}>
+                        <div style={{width:42,height:42,borderRadius:11,background:getCat(saleItem.category).bg,display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid var(--paper-2)'}}>
+                          {React.createElement(getCat(saleItem.category).Icon,{s:20,c:getCat(saleItem.category).color})}
+                        </div>
+                        <div>
+                          <div style={{fontWeight:700,fontSize:14}}>{saleItem.name}</div>
+                          <div style={{fontSize:11,color:'var(--tx-3)'}}>Buy:{fmt(saleItem.buyPrice)} · Sell:{fmt(saleItem.sellPrice)} · Margin:{(((saleItem.sellPrice-saleItem.buyPrice)/saleItem.sellPrice)*100).toFixed(1)}%</div>
+                        </div>
+                      </div>
+                      <div className="form-grid-2" style={{marginBottom:14,minWidth:0}}>
+                        <div className="field" style={{minWidth:0}}><label>{t.quantity}</label><input type="number" min="1" value={sForm.qty} onChange={e=>setSForm({...sForm,qty:+e.target.value})}/></div>
+                        <div className="field" style={{minWidth:0}}><label>{t.customer}</label><input placeholder="Optional" value={sForm.customer} onChange={e=>setSForm({...sForm,customer:e.target.value})}/></div>
+                      </div>
+                      <div className="total-due-box" style={{marginBottom:13}}>
+                        <div className="total-due-label">{t.totalDue}</div>
+                        <div className="total-due-value">{fmt(saleTotal)}</div>
+                        <div style={{fontSize:11,opacity:.45,marginTop:3}}>Profit:{fmt((saleItem.sellPrice-saleItem.buyPrice)*sForm.qty)}</div>
+                      </div>
+                      <div className={`check-row${sForm.isDebt?' checked':''}`} onClick={()=>setSForm({...sForm,isDebt:!sForm.isDebt})}>
+                        <input type="checkbox" checked={sForm.isDebt} onChange={()=>{}}/>
+                        <div>
+                          <div style={{fontWeight:700,color:'var(--rose)',fontSize:13,display:'flex',alignItems:'center',gap:6}}><Ico.AlertTriangle s={13} c="var(--rose)"/>{t.pending}</div>
+                          <div style={{fontSize:11,color:'var(--tx-3)'}}>Mark if payment not received yet</div>
+                        </div>
+                      </div>
+                    </div>}
+                    <button className="btn btn-primary btn-full" onClick={recSale} disabled={!sForm.itemId} style={{padding:13,gap:8}}>
+                      <Ico.Sale s={15} c="var(--gold-light)"/>{t.recordSale}
+                    </button>
+                  </div>
+                </div>
+                {/* Recent sales */}
+                <div className="card" style={{marginBottom:0}}>
+                  <div className="card-header">
+                    <span className="card-title" style={{fontSize:13,display:'flex',alignItems:'center',gap:7}}><Ico.Chart s={13} c="var(--amber)"/>Recent Sales</span>
+                    <span style={{fontSize:11,color:'var(--tx-3)'}}>{sales.length} total</span>
+                  </div>
+                  {sales.length===0?<div className="empty-state" style={{padding:'24px 20px'}}><div className="empty-state-icon"><Ico.ShoppingBag s={28} c="var(--tx-3)"/></div><p>{t.noSales}</p></div>:
+                  <div style={{maxHeight:300,overflowY:'auto'}}>
+                    {sales.slice(0,8).map(s=>{const cat=getCat(s.category);return(
+                      <div key={s.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 16px',borderBottom:'1px solid rgba(26,18,8,.04)'}}>
+                        <div className="cat-icon-wrap" style={{width:28,height:28,background:cat.bg,color:cat.color,borderRadius:7,flexShrink:0}}><cat.Icon s={13} c={cat.color}/></div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:600,fontSize:12,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{s.itemName}</div>
+                          <div style={{fontSize:10,color:'var(--tx-3)'}}>×{s.quantity} · {s.customer}</div>
+                        </div>
+                        <div style={{textAlign:'right',flexShrink:0}}>
+                          <div style={{fontFamily:'DM Mono,monospace',fontWeight:600,fontSize:12}}>{fmt(s.total)}</div>
+                          {s.isDebt?<span className="badge badge-red" style={{fontSize:8,padding:'2px 6px'}}>Debt</span>:<span className="badge badge-green" style={{fontSize:8,padding:'2px 6px'}}>Paid</span>}
+                        </div>
+                      </div>
+                    );})}
+                  </div>}
+                </div>
+              </div>
+
+              {/* RIGHT: inventory */}
+              <div>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                  <div style={{width:28,height:28,borderRadius:7,background:'rgba(196,134,43,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.Inventory s={14} c="var(--amber)"/></div>
+                  <div style={{fontFamily:'Playfair Display,serif',fontSize:16,fontWeight:700,color:'var(--ink)'}}>Inventory</div>
+                  <div style={{flex:1,height:1,background:'var(--paper-2)',marginLeft:4}}/>
+                  <span style={{fontSize:11,color:'var(--tx-3)'}}>{inv.length} products</span>
+                </div>
+                <div className="card" style={{marginBottom:14}}>
+                  <div className="card-header"><span className="card-title" style={{fontSize:13,display:'flex',alignItems:'center',gap:7}}><Ico.Package s={13} c="var(--amber)"/>{t.addItem}</span></div>
+                  <div className="card-body" style={{padding:16}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                      <div className="field" style={{gridColumn:'1/-1'}}><label>{t.itemName}</label><input placeholder="e.g. Biology Form 4" value={nItem.name} onChange={e=>setNItem({...nItem,name:e.target.value})}/></div>
+                      <div className="field"><label>{t.category}</label><select value={nItem.category} onChange={e=>setNItem({...nItem,category:e.target.value})}>{CATS.map(c=><option key={c.id} value={c.id}>{lang==='sw'?c.sw:c.label}</option>)}</select></div>
+                      <div className="field"><label>{t.buyPrice}</label><input type="number" placeholder="0" value={nItem.buyPrice} onChange={e=>setNItem({...nItem,buyPrice:e.target.value})}/></div>
+                      <div className="field"><label>{t.sellPrice}</label><input type="number" placeholder="0" value={nItem.sellPrice} onChange={e=>setNItem({...nItem,sellPrice:e.target.value})}/></div>
+                    </div>
+                    {nItem.buyPrice&&nItem.sellPrice&&+nItem.sellPrice>+nItem.buyPrice&&<div style={{background:'rgba(74,124,89,.07)',border:'1px solid rgba(74,124,89,.2)',borderRadius:'var(--r-sm)',padding:'7px 12px',marginBottom:10,fontSize:11,color:'var(--sage-2)',display:'flex',gap:14,alignItems:'center'}}>
+                      <Ico.TrendUp s={13} c="var(--sage)"/>
+                      <span>Margin:<strong>{(((+nItem.sellPrice-+nItem.buyPrice)/+nItem.sellPrice)*100).toFixed(1)}%</strong></span>
+                      <span>Profit/unit:<strong>{fmt(+nItem.sellPrice-+nItem.buyPrice)}</strong></span>
+                    </div>}
+                    <button className="btn btn-primary btn-sm" onClick={addItem} style={{gap:6}}><Ico.Package s={13} c="var(--gold-light)"/>{t.save}</button>
+                  </div>
+                </div>
+                <div className="card" style={{marginBottom:0}}>
+                  <div className="card-header" style={{padding:'12px 16px'}}>
+                    <span className="card-title" style={{fontSize:13}}>Product List</span>
+                    <div className="field search-wrap" style={{width:190,marginBottom:0}}>
+                      <span className="search-icon-abs"><Ico.Search s={13} c="var(--tx-3)"/></span>
+                      <input placeholder={t.search} value={srch} onChange={e=>setSrch(e.target.value)} style={{paddingLeft:32,padding:'7px 10px 7px 32px',fontSize:12}}/>
+                    </div>
+                  </div>
+                  {filtInv.length===0?<div className="empty-state" style={{padding:'24px 20px'}}><div className="empty-state-icon"><Ico.Package s={28} c="var(--tx-3)"/></div><p>{srch?'No products match.':t.noInventory}</p></div>:
+                  <div className="table-wrap" style={{maxHeight:420,overflowY:'auto'}}>
+                    <table>
+                      <thead><tr><th>Product</th><th>{t.sellPrice}</th><th>{t.margin}</th><th>{t.profitPerUnit}</th><th></th></tr></thead>
+                      <tbody>{filtInv.map(i=>{
+                        const cat=getCat(i.category);const margin=i.sellPrice>0?(((i.sellPrice-i.buyPrice)/i.sellPrice)*100).toFixed(1):0;
+                        return<tr key={i.id} style={{cursor:'pointer'}} onClick={()=>setSForm({...sForm,itemId:String(i.id)})}>
+                          <td><div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <div className="cat-icon-wrap" style={{width:28,height:28,borderRadius:7,background:cat.bg,color:cat.color}}><cat.Icon s={13} c={cat.color}/></div>
+                            <div><div style={{fontWeight:600,fontSize:12}}>{i.name}</div><div style={{fontSize:10,color:cat.color,fontWeight:600}}>{lang==='sw'?cat.sw:cat.label}</div></div>
+                          </div></td>
+                          <td style={{fontFamily:'DM Mono,monospace',fontWeight:600,fontSize:12}}>{fmt(i.sellPrice)}</td>
+                          <td><span className={`badge ${+margin<15?'badge-red':'badge-green'}`} style={{fontSize:8}}>{margin}%</span></td>
+                          <td style={{fontFamily:'DM Mono,monospace',color:'var(--sage-2)',fontSize:11,fontWeight:600}}>{fmt(i.sellPrice-i.buyPrice)}</td>
+                          <td onClick={e=>e.stopPropagation()}><button className="btn btn-ghost btn-sm" onClick={()=>delItem(i.id)} style={{color:'var(--rose)',borderColor:'rgba(192,57,43,.2)',padding:'4px 8px'}}><Ico.Trash s={12} c="var(--rose)"/></button></td>
+                        </tr>;
+                      })}</tbody>
+                    </table>
+                  </div>}
+                  {filtInv.length>0&&<div style={{padding:'8px 16px',borderTop:'1px solid var(--paper-2)',fontSize:10,color:'var(--tx-3)',fontStyle:'italic',display:'flex',alignItems:'center',gap:5}}>
+                    <Ico.Info s={11} c="var(--tx-3)"/> Click any row to select it for sale
+                  </div>}
+                </div>
+              </div>
+            </div>
+          </div>}
+
+          {/* ═══ DEBTS ═══ */}
+          {tab==='debts'&&<div className="sec">
+            <div className="card" style={{marginBottom:16}}>
+              <div className="card-body" style={{padding:'14px 18px',display:'flex',alignItems:'center',gap:14}}>
+                <div style={{width:40,height:40,borderRadius:10,background:'rgba(192,57,43,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.Debt s={20} c="var(--rose)"/></div>
+                <div>
+                  <div style={{fontSize:10,color:'var(--tx-3)',textTransform:'uppercase',letterSpacing:'.08em',fontWeight:700}}>Total Outstanding</div>
+                  <div style={{fontFamily:'DM Mono,monospace',fontSize:22,fontWeight:500,color:'var(--rose)'}}>{fmt(totalDebt)}</div>
+                </div>
+                <span className="badge badge-red" style={{marginLeft:'auto'}}>{debtCt} pending</span>
+              </div>
+            </div>
+            <div className="card">
+              {sales.filter(s=>s.isDebt).length===0?<div className="empty-state"><div className="empty-state-icon"><Ico.CheckCircle s={40} c="var(--sage)"/></div><p>{t.noDebts}</p></div>:
+              <div className="table-wrap"><table>
+                <thead><tr><th>{t.customer}</th><th>Product</th><th>Date</th><th>Amount</th><th>Action</th></tr></thead>
+                <tbody>{sales.filter(s=>s.isDebt).map(s=>{const cat=getCat(s.category);return<tr key={s.id}>
+                  <td style={{fontWeight:700}}>{s.customer}</td>
+                  <td><div style={{display:'flex',alignItems:'center',gap:8}}><div className="cat-icon-wrap" style={{width:28,height:28,background:cat.bg,color:cat.color}}><cat.Icon s={13} c={cat.color}/></div><div><div style={{fontSize:13}}>{s.itemName}</div><div style={{fontSize:11,color:'var(--tx-3)'}}>×{s.quantity}</div></div></div></td>
+                  <td style={{fontFamily:'DM Mono,monospace',fontSize:12,color:'var(--tx-2)'}}>{s.date.split('T')[0]}</td>
+                  <td style={{fontFamily:'DM Mono,monospace',fontWeight:700,color:'var(--rose)'}}>{fmt(s.total)}</td>
+                  <td><button className="btn btn-green btn-sm" onClick={()=>toggleDebt(s.id)} style={{gap:5}}><Ico.Check s={12} c="#fff"/>{t.markPaid}</button></td>
+                </tr>;})}</tbody>
+              </table></div>}
+            </div>
+          </div>}
+
+          {/* ═══ SUPPLIERS & PAYABLES ═══ */}
+          {tab==='suppliers'&&<div className="sec">
+
+            {/* HOW TO USE */}
+            <div className="how-to-box">
+              <div className="how-to-toggle" onClick={()=>setHowOpen(o=>!o)}>
+                <h4><Ico.Info s={13} c="var(--amber)"/>{t.howToUse} — Suppliers & Payables</h4>
+                {howOpen?<Ico.ChevronUp s={15} c="var(--amber)"/>:<Ico.ChevronDown s={15} c="var(--amber)"/>}
+              </div>
+              {howOpen&&<div className="how-to-body">
+                <div className="how-step">
+                  <div className="how-step-num">1</div>
+                  <div className="how-step-text"><strong>Add your Suppliers</strong> — In the left panel, register every publisher, wholesaler, or vendor you buy stock from. Include their phone so you can contact them quickly when placing orders.</div>
+                </div>
+                <div className="how-step">
+                  <div className="how-step-num">2</div>
+                  <div className="how-step-text"><strong>Record every Purchase Order</strong> — Each time you restock from a supplier, create a purchase order on the right. Enter the book/item name, quantity, and unit cost. The system calculates the total you owe.</div>
+                </div>
+                <div className="how-step">
+                  <div className="how-step-num">3</div>
+                  <div className="how-step-text"><strong>Track what you owe</strong> — All unpaid orders appear highlighted in red. The <em>Total Payable</em> banner at the top tells you your outstanding supplier liability at a glance.</div>
+                </div>
+                <div className="how-step">
+                  <div className="how-step-num">4</div>
+                  <div className="how-step-text"><strong>Mark as Paid</strong> — When you settle a supplier invoice, click <em>Mark Paid</em> on that order. It moves to your paid history so you always have a full audit trail.</div>
+                </div>
+                <div className="how-step">
+                  <div className="how-step-num">5</div>
+                  <div className="how-step-text"><strong>Filter by Supplier</strong> — Click any supplier card on the left to filter the orders table to just their transactions. Click again to clear the filter.</div>
+                </div>
+              </div>}
+            </div>
+
+            {/* SUMMARY STRIP */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:12,marginBottom:18}}>
+              {[
+                {lbl:'Total Payable',val:fmt(totalPayable),color:'var(--rose)'},
+                {lbl:'Unpaid Orders',val:unpaidPOCt,color:'var(--rose)'},
+                {lbl:'Total Spent (All)',val:fmt(totalPOSpend),color:'var(--amber)'},
+                {lbl:'Suppliers',val:suppl.length,color:'var(--sage)'},
+              ].map((s,i)=><div key={i} className="summary-stat">
+                <div className="lbl">{s.lbl}</div>
+                <div className="val" style={{color:s.color}}>{s.val}</div>
+              </div>)}
+            </div>
+
+            <div className="ops-split">
+
+              {/* ── LEFT: SUPPLIER REGISTRY ── */}
+              <div>
+                <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:14}}>
+                  <div style={{width:26,height:26,borderRadius:6,background:'rgba(196,134,43,.12)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.Building s={13} c="var(--amber)"/></div>
+                  <span style={{fontFamily:'Playfair Display,serif',fontSize:15,fontWeight:700,color:'var(--ink)'}}>Supplier Registry</span>
+                  <div style={{flex:1,height:1,background:'var(--paper-2)'}}/>
+                  <span style={{fontSize:11,color:'var(--tx-3)'}}>{suppl.length} registered</span>
+                </div>
+
+                {/* Add supplier form */}
+                <div className="card" style={{marginBottom:14}}>
+                  <div className="card-header"><span className="card-title" style={{fontSize:13,display:'flex',alignItems:'center',gap:7}}><Ico.Plus s={12} c="var(--amber)"/>{t.addSupplier}</span></div>
+                  <div className="card-body" style={{padding:15}}>
+                    <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:11}}>
+                      <div className="field"><label>{t.supplierName}</label><input placeholder="e.g. Longhorn Publishers, Nairobi Books" value={splForm.name} onChange={e=>setSplForm({...splForm,name:e.target.value})}/></div>
+                      <div className="field"><label>{t.supplierContact}</label><input placeholder="+255 7XX XXX XXX" value={splForm.contact} onChange={e=>setSplForm({...splForm,contact:e.target.value})}/></div>
+                      <div className="field"><label>Notes (optional)</label><input placeholder="e.g. Wholesale only, min order 20" value={splForm.notes} onChange={e=>setSplForm({...splForm,notes:e.target.value})}/></div>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={addSupplier} style={{gap:6}}><Ico.Plus s={12} c="var(--gold-light)"/>Add Supplier</button>
+                  </div>
+                </div>
+
+                {/* Supplier list */}
+                {suppl.length===0?<div className="empty-state" style={{padding:'28px 20px'}}><div className="empty-state-icon"><Ico.Building s={32} c="var(--tx-3)"/></div><p>{t.noSuppliers}</p></div>:
+                <div>
+                  {selSuppl&&<div style={{marginBottom:10,display:'flex',alignItems:'center',gap:8}}>
+                    <span className="badge badge-amber">Filtering by: {suppl.find(s=>s.id===selSuppl)?.name}</span>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>setSelSuppl(null)} style={{padding:'3px 9px',fontSize:10,gap:5}}><Ico.X s={10}/>Clear</button>
+                  </div>}
+                  {suppl.map(s=>{
+                    const sCt=po.filter(p=>p.supplierId===s.id).length;
+                    const sOwed=po.filter(p=>p.supplierId===s.id&&!p.paid).reduce((a,p)=>a+p.totalCost,0);
+                    return<div key={s.id} className={`supplier-card${selSuppl===s.id?' selected':''}`}
+                      onClick={()=>setSelSuppl(selSuppl===s.id?null:s.id)}>
+                      <div className="supplier-avatar">{s.name.charAt(0).toUpperCase()}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:13,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{s.name}</div>
+                        {s.contact&&<div style={{fontSize:11,color:'var(--tx-3)',display:'flex',alignItems:'center',gap:4,marginTop:2}}><Ico.Phone s={10} c="var(--tx-3)"/>{s.contact}</div>}
+                        {s.notes&&<div style={{fontSize:10,color:'var(--tx-3)',fontStyle:'italic',marginTop:1,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{s.notes}</div>}
+                      </div>
+                      <div style={{textAlign:'right',flexShrink:0}}>
+                        <div style={{fontSize:10,color:'var(--tx-3)',marginBottom:2}}>{sCt} order{sCt!==1?'s':''}</div>
+                        {sOwed>0&&<div style={{fontFamily:'DM Mono,monospace',fontSize:12,fontWeight:700,color:'var(--rose)'}}>{fmt(sOwed)}</div>}
+                        {sOwed===0&&<div style={{fontSize:10,color:'var(--sage)',fontWeight:700}}>✓ Clear</div>}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" onClick={e=>{e.stopPropagation();delSupplier(s.id);}} style={{color:'var(--rose)',borderColor:'rgba(192,57,43,.15)',padding:'4px 7px',marginLeft:4}}>
+                        <Ico.Trash s={11} c="var(--rose)"/>
+                      </button>
+                    </div>;
+                  })}
+                </div>}
+              </div>
+
+              {/* ── RIGHT: PURCHASE ORDERS ── */}
+              <div>
+                <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:14}}>
+                  <div style={{width:26,height:26,borderRadius:6,background:'rgba(192,57,43,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.ClipboardList s={13} c="var(--rose)"/></div>
+                  <span style={{fontFamily:'Playfair Display,serif',fontSize:15,fontWeight:700,color:'var(--ink)'}}>Purchase Orders</span>
+                  <div style={{flex:1,height:1,background:'var(--paper-2)'}}/>
+                  <span style={{fontSize:11,color:'var(--tx-3)'}}>{filtPO.length} orders</span>
+                </div>
+
+                {/* Add PO form */}
+                <div className="card" style={{marginBottom:14}}>
+                  <div className="card-header"><span className="card-title" style={{fontSize:13,display:'flex',alignItems:'center',gap:7}}><Ico.ClipboardList s={13} c="var(--amber)"/>{t.addOrder}</span></div>
+                  <div className="card-body" style={{padding:15}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                      <div className="field" style={{gridColumn:'1/-1'}}>
+                        <label>{t.poSupplier}</label>
+                        <select value={poForm.supplierId} onChange={e=>setPoForm({...poForm,supplierId:e.target.value})}>
+                          <option value="">— Select supplier —</option>
+                          {suppl.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="field" style={{gridColumn:'1/-1'}}><label>{t.poItem}</label><input placeholder="e.g. KCSE Biology Past Papers 2025" value={poForm.item} onChange={e=>setPoForm({...poForm,item:e.target.value})}/></div>
+                      <div className="field"><label>{t.category}</label><select value={poForm.category} onChange={e=>setPoForm({...poForm,category:e.target.value})}>{CATS.map(c=><option key={c.id} value={c.id}>{lang==='sw'?c.sw:c.label}</option>)}</select></div>
+                      <div className="field"><label>{t.poDate}</label><input type="date" value={poForm.date} onChange={e=>setPoForm({...poForm,date:e.target.value})}/></div>
+                      <div className="field"><label>{t.poQty}</label><input type="number" min="1" placeholder="0" value={poForm.qty} onChange={e=>setPoForm({...poForm,qty:e.target.value})}/></div>
+                      <div className="field"><label>{t.poUnit} (TZS)</label><input type="number" placeholder="0" value={poForm.unitCost} onChange={e=>setPoForm({...poForm,unitCost:e.target.value})}/></div>
+                    </div>
+                    {poForm.qty&&poForm.unitCost&&+poForm.qty>0&&+poForm.unitCost>0&&<div style={{background:'rgba(192,57,43,.06)',border:'1px solid rgba(192,57,43,.18)',borderRadius:'var(--r-sm)',padding:'8px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
+                      <Ico.AlertTriangle s={13} c="var(--rose)"/>
+                      <span style={{fontSize:12,color:'var(--rose)',fontWeight:600}}>Total Payable: {fmt(+poForm.qty * +poForm.unitCost)}</span>
+                    </div>}
+                    <button className="btn btn-primary btn-sm" onClick={addPO} disabled={!poForm.supplierId||suppl.length===0} style={{gap:6}}>
+                      <Ico.ClipboardList s={13} c="var(--gold-light)"/>Record Purchase
+                    </button>
+                    {suppl.length===0&&<div style={{fontSize:11,color:'var(--tx-3)',marginTop:7,fontStyle:'italic'}}>↑ Add a supplier first to record purchase orders.</div>}
+                  </div>
+                </div>
+
+                {/* PO table */}
+                <div className="card" style={{marginBottom:0}}>
+                  <div className="card-header" style={{padding:'12px 16px'}}>
+                    <span className="card-title" style={{fontSize:13}}>
+                      {selSuppl?`Orders — ${suppl.find(s=>s.id===selSuppl)?.name}`:'All Purchase Orders'}
+                    </span>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      {po.filter(p=>!p.paid).length>0&&<span className="badge badge-red">{po.filter(p=>!p.paid).length} unpaid</span>}
+                    </div>
+                  </div>
+                  {filtPO.length===0?<div className="empty-state" style={{padding:'28px 20px'}}>
+                    <div className="empty-state-icon"><Ico.ClipboardList s={32} c="var(--tx-3)"/></div>
+                    <p>{t.noOrders}</p>
+                  </div>:
+                  <div className="table-wrap" style={{maxHeight:460,overflowY:'auto'}}>
+                    <table>
+                      <thead><tr><th>Item</th><th>Supplier</th><th>Date</th><th>Qty</th><th>Total</th><th>Status</th><th></th></tr></thead>
+                      <tbody>{[...filtPO].sort((a,b)=>a.paid-b.paid||new Date(b.date)-new Date(a.date)).map(p=>{
+                        const cat=getCat(p.category);
+                        return<tr key={p.id} style={{opacity:p.paid?.7:1}}>
+                          <td><div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <div className="cat-icon-wrap" style={{width:26,height:26,borderRadius:6,background:cat.bg,color:cat.color,flexShrink:0}}><cat.Icon s={12} c={cat.color}/></div>
+                            <div style={{fontSize:12,fontWeight:600,maxWidth:140,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{p.item}</div>
+                          </div></td>
+                          <td style={{fontSize:11,color:'var(--tx-2)',maxWidth:100,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{p.supplierName}</td>
+                          <td style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'var(--tx-3)'}}>{p.date}</td>
+                          <td style={{fontFamily:'DM Mono,monospace',fontSize:12,textAlign:'center'}}>{p.qty}</td>
+                          <td style={{fontFamily:'DM Mono,monospace',fontWeight:700,fontSize:12,color:p.paid?'var(--tx-3)':'var(--rose)'}}>{fmt(p.totalCost)}</td>
+                          <td><span className={`status-pill ${p.paid?'paid':'unpaid'}`}>
+                            {p.paid?<><Ico.Check s={9}/>{t.paid}</>:<><Ico.AlertTriangle s={9}/>{t.poUnpaid}</>}
+                          </span></td>
+                          <td><button className={`btn btn-sm ${p.paid?'btn-ghost':'btn-green'}`} onClick={()=>togglePO(p.id)} style={{gap:4,padding:'4px 10px',fontSize:10,whiteSpace:'nowrap'}}>
+                            {p.paid?<><Ico.X s={10}/>Undo</>:<><Ico.Check s={10}/>{t.poPaid}</>}
+                          </button></td>
+                        </tr>;
+                      })}</tbody>
+                    </table>
+                  </div>}
+                  {filtPO.length>0&&<div style={{padding:'10px 16px',borderTop:'1px solid var(--paper-2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div style={{fontSize:11,color:'var(--tx-3)',fontStyle:'italic',display:'flex',alignItems:'center',gap:5}}><Ico.Info s={11} c="var(--tx-3)"/>Unpaid orders shown first</div>
+                    <div style={{fontFamily:'DM Mono,monospace',fontSize:13,fontWeight:700,color:'var(--rose)'}}>
+                      Owed: {fmt(filtPO.filter(p=>!p.paid).reduce((a,p)=>a+p.totalCost,0))}
+                    </div>
+                  </div>}
+                </div>
+              </div>
+
+            </div>
+          </div>}
+
+          {/* ═══ EXPENSES ═══ */}
+          {tab==='expenses'&&<div className="sec" style={{maxWidth:660,margin:'0 auto'}}>
+            <div className="card">
+              <div className="card-header"><span className="card-title" style={{display:'flex',alignItems:'center',gap:8}}><Ico.Expense s={14} c="var(--amber)"/>Record Expense</span></div>
+              <div className="card-body">
+                <div style={{display:'flex',gap:11,alignItems:'flex-end'}}>
+                  <div className="field" style={{flex:2}}><label>Description</label><input placeholder="e.g. Rent, Transport, Supplies" value={eForm.name} onChange={e=>setEForm({...eForm,name:e.target.value})}/></div>
+                  <div className="field" style={{flex:1}}><label>Amount (TZS)</label><input type="number" placeholder="0" value={eForm.cost} onChange={e=>setEForm({...eForm,cost:e.target.value})}/></div>
+                  <button className="btn btn-red" onClick={addExp} style={{marginBottom:0,flexShrink:0,gap:6}}><Ico.Plus s={14}/>Add</button>
+                </div>
+              </div>
+            </div>
+            <div className="card">
+              <div className="card-header"><span className="card-title">Expense Ledger</span><span style={{fontFamily:'DM Mono,monospace',fontWeight:600,color:'var(--rose)',fontSize:13}}>{fmt(totalExp)}</span></div>
+              {exp.length===0?<div className="empty-state"><div className="empty-state-icon"><Ico.FileText s={40} c="var(--tx-3)"/></div><p>No expenses recorded.</p></div>:
+              <div className="table-wrap"><table>
+                <thead><tr><th>Description</th><th>Date</th><th>Amount</th><th></th></tr></thead>
+                <tbody>{[...exp].reverse().map(e=><tr key={e.id}>
+                  <td style={{fontWeight:600}}>{e.name}</td>
+                  <td style={{fontFamily:'DM Mono,monospace',fontSize:12,color:'var(--tx-2)'}}>{e.date?e.date.split('T')[0]:'—'}</td>
+                  <td style={{fontFamily:'DM Mono,monospace',fontWeight:600,color:'var(--rose)'}}>{fmt(e.cost)}</td>
+                  <td><button className="btn btn-ghost btn-sm" onClick={()=>setExp(exp.filter(x=>x.id!==e.id))} style={{color:'var(--rose)',borderColor:'rgba(192,57,43,.2)',padding:'5px 9px'}}><Ico.Trash s={13} c="var(--rose)"/></button></td>
+                </tr>)}</tbody>
+              </table></div>}
+            </div>
+          </div>}
+
+          {/* ═══ FINANCIALS ═══ */}
+          {tab==='financials'&&<div className="sec">
+            <div className="capital-hero">
+              <div style={{position:'relative',zIndex:1}}>
+                <div style={{fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.42,marginBottom:5,display:'flex',alignItems:'center',gap:6}}><Ico.Financial s={11} c="var(--cream)"/>{t.capitalTitle}</div>
+                <div style={{fontFamily:'Playfair Display,serif',fontSize:36,fontWeight:700,color:'var(--gold-light)',letterSpacing:'-.02em'}}>{fmt(biz.capital)}</div>
+                <div style={{fontSize:12,opacity:.4,marginTop:3}}>{t.capital}</div>
+                <div style={{display:'flex',gap:9,marginTop:18,flexWrap:'wrap'}}>
+                  <div className="field" style={{marginBottom:0}}><input type="number" placeholder="Enter new capital amount" value={capIn} onChange={e=>setCapIn(e.target.value)} style={{background:'rgba(255,255,255,.1)',border:'1px solid rgba(255,255,255,.18)',color:'var(--cream)',width:230,fontFamily:'DM Sans,sans-serif'}}/></div>
+                  <button className="btn btn-amber" onClick={updateCap} style={{gap:6}}><Ico.Banknote s={14}/>{t.updateCapital}</button>
+                </div>
+              </div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:14,marginBottom:16}}>
+              {[
+                {label:t.runningCost,val:fmt(totalExp),pct:totalRev>0?Math.min((totalExp/totalRev)*100,100):0,color:'var(--rose)',note:`${totalRev>0?((totalExp/totalRev)*100).toFixed(1):0}% of revenue`,icon:<Ico.TrendDown s={16} c="var(--rose)"/>},
+                {label:t.roi,val:`${biz.capital>0?((netProfit/biz.capital)*100).toFixed(1):0}%`,pct:biz.capital>0?Math.min(Math.max((netProfit/biz.capital)*100,0),100):0,color:'var(--sage)',note:`${t.balance}:${fmt(biz.capital-totalExp)}`,icon:<Ico.TrendUp s={16} c="var(--sage)"/>},
+              ].map((row,i)=><div key={i} className="card" style={{marginBottom:0}}>
+                <div className="card-body">
+                  <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>{row.icon}<div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--tx-3)',fontWeight:700}}>{row.label}</div></div>
+                  <div style={{fontFamily:'DM Mono,monospace',fontSize:26,fontWeight:500,color:row.color}}>{row.val}</div>
+                  <div style={{marginTop:10}}><div className="progress-track"><div className="progress-fill" style={{width:`${row.pct}%`,background:row.color}}/></div></div>
+                  <div style={{fontSize:11,color:'var(--tx-3)',marginTop:5}}>{row.note}</div>
+                </div>
+              </div>)}
+            </div>
+            <div className="card">
+              <div className="card-header"><span className="card-title" style={{display:'flex',alignItems:'center',gap:8}}><Ico.FileText s={14} c="var(--amber)"/>Financial Summary</span></div>
+              <div className="table-wrap"><table><tbody>
+                {[
+                  ['Total Revenue',fmt(totalRev),'var(--amber)',false],
+                  ['Cost of Goods',fmt(totalCOGS),'var(--umber)',false],
+                  ['Gross Profit',fmt(grossProfit),grossProfit>=0?'var(--sage)':'var(--rose)',false],
+                  ['Operating Exp.',fmt(totalExp),'var(--rose)',false],
+                  ['Net Profit',fmt(netProfit),netProfit>=0?'var(--sage)':'var(--rose)',true],
+                  ['Outstanding Debts',fmt(totalDebt),'var(--sky)',false],
+                  ['Invested Capital',fmt(biz.capital),'var(--amber)',false],
+                ].map(([lbl,val,clr,bold],i)=><tr key={i} style={bold?{background:'var(--paper)'}:{}}>
+                  <td style={{color:'var(--tx-2)',fontWeight:bold?700:500}}>{lbl}</td>
+                  <td style={{fontFamily:'DM Mono,monospace',fontWeight:bold?700:500,color:clr,textAlign:'right'}}>{val}</td>
+                </tr>)}
+              </tbody></table></div>
+            </div>
+          </div>}
+
+          {/* ═══ LICENSES ═══ */}
+          {tab==='licenses'&&<div className="sec">
+            <div className="card" style={{maxWidth:620,marginBottom:22}}>
+              <div className="card-header"><span className="card-title" style={{display:'flex',alignItems:'center',gap:8}}><Ico.License s={14} c="var(--amber)"/>{t.addLicense}</span></div>
+              <div className="card-body">
+                <div className="field" style={{marginBottom:13}}><label>{t.licenseType}</label><select value={lForm.type} onChange={e=>setLForm({...lForm,type:e.target.value})}>{LICENSE_TYPES.map(l=><option key={l.id} value={l.id}>{l.name} ({l.label})</option>)}</select></div>
+                <div className="form-grid-2" style={{marginBottom:12}}>
+                  <div className="field"><label>{t.licenseCost}</label><input type="number" placeholder="0" value={lForm.cost} onChange={e=>setLForm({...lForm,cost:e.target.value})}/></div>
+                  <div className="field"><label>{t.paymentDate}</label><input type="date" value={lForm.date} onChange={e=>setLForm({...lForm,date:e.target.value})}/></div>
+                </div>
+                <div style={{fontSize:12,color:'var(--tx-3)',fontStyle:'italic',marginBottom:14,display:'flex',alignItems:'center',gap:6}}>
+                  <Ico.Info s={13} c="var(--tx-3)"/>Renewal reminder based on {LICENSE_TYPES.find(l=>l.id===lForm.type)?.label?.toLowerCase()} cycle.
+                </div>
+                <button className="btn btn-primary" onClick={addLic} style={{gap:7}}><Ico.Calendar s={14} c="var(--gold-light)"/>{t.addLicense}</button>
+              </div>
+            </div>
+            {lic.length===0?<div className="empty-state"><div className="empty-state-icon"><Ico.License s={40} c="var(--tx-3)"/></div><p>No license records yet.</p></div>:
+            <div className="license-grid">{lic.map(l=>{
+              const st=licSt(l.nextDue);
+              return<div key={l.id} className="license-card">
+                <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:st.color,borderRadius:'var(--r) var(--r) 0 0'}}/>
+                <div style={{marginBottom:6,display:'flex',alignItems:'center',gap:7}}>
+                  <div style={{width:28,height:28,borderRadius:7,background:`${st.color}18`,display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.License s={14} c={st.color}/></div>
+                  <span className={`badge ${st.cls}`}>{st.label}</span>
+                </div>
+                <h4>{l.name}</h4>
+                <div style={{fontSize:12,color:'var(--tx-3)',marginBottom:14,display:'flex',alignItems:'center',gap:5}}><Ico.Calendar s={11} c="var(--tx-3)"/>Paid:{l.date}</div>
+                <div style={{borderTop:'1px solid var(--paper-2)',paddingTop:12,display:'flex',justifyContent:'space-between'}}>
+                  <div><div style={{fontSize:9,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--tx-3)',marginBottom:2}}>{t.nextDue}</div><div style={{fontFamily:'DM Mono,monospace',fontSize:12,fontWeight:600,color:st.color}}>{l.nextDue}</div></div>
+                  <div style={{textAlign:'right'}}><div style={{fontSize:9,textTransform:'uppercase',letterSpacing:'.1em',color:'var(--tx-3)',marginBottom:2}}>Cost</div><div style={{fontFamily:'DM Mono,monospace',fontSize:12,fontWeight:600}}>{fmt(l.cost)}</div></div>
+                </div>
+              </div>;
+            })}</div>}
+          </div>}
+
+        </div>
+      </main>
+    </div>
+  </>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
