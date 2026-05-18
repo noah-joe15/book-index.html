@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INGU BOOK STORE — Analytics Platform</title>
+<title>Farhiya_Gaungzhou Store</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -574,7 +574,7 @@ const T = {
 
 /* ── Theme presets ── */
 const PRESETS = [
-  { key:'amber',  name:'Classic Amber',   desc:'Warm bookstore gold',   amber:'#c4862b',gold:'#d4a843',goldLight:'#f0c96a',bark:'#2d1e0f',mahogany:'#3d2b1a',sage:'#4a7c59',rose:'#c0392b' },
+  { key:'amber',  name:'Classic Amber',   desc:'Warm shoe gold',   amber:'#c4862b',gold:'#d4a843',goldLight:'#f0c96a',bark:'#2d1e0f',mahogany:'#3d2b1a',sage:'#4a7c59',rose:'#c0392b' },
   { key:'forest', name:'Forest Green',    desc:'Natural & refreshing',  amber:'#2d7a4a',gold:'#3a9960',goldLight:'#6ee7b7',bark:'#0d2b1a',mahogany:'#143826',sage:'#1a6b3a',rose:'#c0392b' },
   { key:'ocean',  name:'Ocean Blue',      desc:'Cool & professional',   amber:'#1a6fa3',gold:'#2486c4',goldLight:'#7dd3f8',bark:'#0d1e2d',mahogany:'#142536',sage:'#1a5f7a',rose:'#c0392b' },
   { key:'rose',   name:'Rose Gold',       desc:'Elegant & modern',      amber:'#a83255',gold:'#c44070',goldLight:'#f9a8c9',bark:'#2d0d18',mahogany:'#3d1424',sage:'#7a4a6b',rose:'#e05080' },
@@ -881,7 +881,7 @@ function App(){
   const exportCSV=()=>{
     const rows=[['Date','Item','Category','Qty','Total','Debt','Customer'],...sales.map(s=>[s.date.split('T')[0],s.itemName,s.category,s.quantity,s.total,s.isDebt?'YES':'NO',s.customer])];
     const csv='data:text/csv;charset=utf-8,'+rows.map(r=>r.join(',')).join('\n');
-    const a=document.createElement('a');a.href=encodeURI(csv);a.download='ingu_report.csv';a.click();
+    const a=document.createElement('a');a.href=encodeURI(csv);a.download='Gaungzhou_report.csv';a.click();
     toast('Report exported.','success');
   };
   const resetAll=()=>{
@@ -973,7 +973,7 @@ function App(){
             <div style={{width:32,height:32,background:'linear-gradient(135deg,var(--amber),var(--gold))',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               <Ico.Inventory s={16} c="var(--bark)"/>
             </div>
-            <div className="sidebar-logo">INGU</div>
+            <div className="sidebar-logo">Guangzhou</div>
           </div>
           <div className="sidebar-tagline">Store Analytics</div>
         </div>
